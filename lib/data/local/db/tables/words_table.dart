@@ -3,7 +3,8 @@ import 'package:drift/drift.dart';
 class Words extends Table {
   TextColumn get id => text()();
 
-  TextColumn get wordText => text()();
+  TextColumn get wordText =>
+      text().named('word_text')();
 
   TextColumn get languageCode =>
       text().named('language_code')();
@@ -25,6 +26,6 @@ class Words extends Table {
 
   @override
   List<String> get customConstraints => [
-    'UNIQUE(language_code, wordText)'
+    'UNIQUE(language_code, word_text)'
   ];
 }
