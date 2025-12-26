@@ -1,0 +1,22 @@
+import '../../data/local/db/app_database.dart';
+
+abstract class WordRepository {
+  Future<void> addWord({
+    required String text,
+    String? shortMeaning,
+  });
+
+  Future<void> updateWord({
+    required String id,
+    required String text,
+    String? shortMeaning,
+  });
+
+  Future<void> deleteWord(String id);
+
+  Future<List<Word>> listWords();
+
+  Future<List<String>> suggestWords(String prefix);
+
+  Future<int> getWordCount();
+}
