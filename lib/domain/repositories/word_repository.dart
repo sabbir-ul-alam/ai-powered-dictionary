@@ -2,13 +2,12 @@ import '../../data/local/db/app_database.dart';
 
 abstract class WordRepository {
   Future<void> addWord({
-    required String text,
-    String? shortMeaning,
+    required String wordText,
   });
 
   Future<void> updateWord({
     required String id,
-    required String text,
+    required String wordText,
     String? shortMeaning,
   });
 

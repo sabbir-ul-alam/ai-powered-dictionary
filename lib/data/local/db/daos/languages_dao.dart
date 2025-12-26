@@ -14,4 +14,8 @@ class LanguagesDao extends DatabaseAccessor<AppDatabase>
 
   Future<List<Language>> listLanguages() =>
       select(languages).get();
+
+  Future<Language?> getLanguage(String code) =>
+      (select(languages)..where((l) => l.code.equals(code))).getSingle();
+
 }
