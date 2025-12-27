@@ -1,6 +1,9 @@
-import 'package:apd/presentation/screens/language/language_selection_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'presentation/state/providers.dart';
+import 'presentation/screens/language/language_selection_screen.dart';
+import 'presentation/screens/home/home_screen.dart';
 
 void main() {
   runApp(
@@ -10,6 +13,17 @@ void main() {
   );
 }
 
+/// ---------------------------------------------------------------------------
+/// ROOT APP
+/// ---------------------------------------------------------------------------
+///
+/// This widget owns **app start routing logic**.
+/// As the app grows, more checks can be added here:
+/// - Authentication
+/// - Onboarding
+/// - Migrations
+/// - Feature flags
+///
 class DictionaryApp extends StatelessWidget {
   const DictionaryApp({super.key});
 
@@ -17,7 +31,41 @@ class DictionaryApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: LanguageSelectionScreen(),
+      home: AppStartScreen(),
+    );
+  }
+}
+
+/// ---------------------------------------------------------------------------
+/// APP START SCREEN
+/// ---------------------------------------------------------------------------
+///
+/// Decides which screen the user should see on app launch.
+/// This screen should be VERY small and VERY boring.
+///
+class AppStartScreen extends ConsumerWidget {
+  const AppStartScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activeLanguageAsync = ref.watch(activeLanguageProvider);
+
+    return activeLanguageAsync.when(
+      loading: () => const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (_, __) => const Scaffold(
+        body: Center(child: Text('Something went wrong')),
+      ),
+      data: (language) {
+        // If language is already selected, skip language selection
+        if (language != null) {
+          return const HomeScreen();
+        }
+
+        // Otherwise, force user to select a language
+        return const LanguageSelectionScreen();
+      },
     );
   }
 }

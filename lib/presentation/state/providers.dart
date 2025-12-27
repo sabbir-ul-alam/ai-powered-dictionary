@@ -14,46 +14,32 @@ import '../../domain/repositories/word_repository.dart';
 import '../../domain/repositories/language_repository.dart';
 
 /// ---------------------------------------------------------------------------
-/// DATABASE PROVIDER
+/// DATABASE
 /// ---------------------------------------------------------------------------
-///
-/// Provides a single AppDatabase instance for the entire app lifecycle.
-/// In a real production app, this would likely be scoped at app start.
-///
+
 final databaseProvider = Provider<AppDatabase>((ref) {
   return AppDatabase();
 });
 
 /// ---------------------------------------------------------------------------
-/// DAO PROVIDERS (Drift access objects)
+/// DAOs
 /// ---------------------------------------------------------------------------
-///
-/// DAOs are thin SQL wrappers. They should NOT be used directly by UI.
-/// Repositories sit on top of these.
-///
 
 final wordsDaoProvider = Provider<WordsDao>((ref) {
-  final db = ref.watch(databaseProvider);
-  return WordsDao(db);
+  return WordsDao(ref.watch(databaseProvider));
 });
 
 final languagesDaoProvider = Provider<LanguagesDao>((ref) {
-  final db = ref.watch(databaseProvider);
-  return LanguagesDao(db);
+  return LanguagesDao(ref.watch(databaseProvider));
 });
 
 final wordMetadataDaoProvider = Provider<WordMetadataDao>((ref) {
-  final db = ref.watch(databaseProvider);
-  return WordMetadataDao(db);
+  return WordMetadataDao(ref.watch(databaseProvider));
 });
 
 /// ---------------------------------------------------------------------------
-/// PREFERENCES PROVIDER
+/// PREFERENCES
 /// ---------------------------------------------------------------------------
-///
-/// Handles lightweight local state such as active language.
-/// Kept separate from database for simplicity and speed.
-///
 
 final preferencesRepositoryProvider =
 Provider<PreferencesRepository>((ref) {
@@ -61,12 +47,8 @@ Provider<PreferencesRepository>((ref) {
 });
 
 /// ---------------------------------------------------------------------------
-/// REPOSITORY PROVIDERS (Domain abstraction)
+/// REPOSITORIES
 /// ---------------------------------------------------------------------------
-///
-/// These are what the UI and use-cases talk to.
-/// They hide Drift, SQL, and storage details completely.
-///
 
 final languageRepositoryProvider =
 Provider<LanguageRepository>((ref) {
@@ -88,78 +70,64 @@ Provider<WordRepository>((ref) {
 /// ACTIVE LANGUAGE TRIGGER
 /// ---------------------------------------------------------------------------
 ///
-/// This is a simple but powerful pattern:
-/// - Whenever active language changes, we increment this value
-/// - Any provider that watches this will automatically refresh
-///
-/// We do NOT store the language itself here.
-/// The source of truth remains Preferences + LanguageRepository.
+/// Any language or word mutation must bump this.
 ///
 
 final activeLanguageTriggerProvider =
 StateProvider<int>((ref) => 0);
 
 /// ---------------------------------------------------------------------------
-/// ACTIVE LANGUAGE PROVIDER
+/// ACTIVE LANGUAGE
 /// ---------------------------------------------------------------------------
-///
-/// Loads the currently active language from the repository.
-/// Automatically refreshes when activeLanguageTriggerProvider changes.
-///
 
 final activeLanguageProvider =
 FutureProvider((ref) async {
-  // Watch trigger so this provider re-runs on language change
   ref.watch(activeLanguageTriggerProvider);
-
-  final repo = ref.watch(languageRepositoryProvider);
-  return repo.getActiveLanguage();
+  return ref.watch(languageRepositoryProvider).getActiveLanguage();
 });
 
 /// ---------------------------------------------------------------------------
-/// WORD LIST PROVIDER (Language-scoped)
+/// WORD LIST
 /// ---------------------------------------------------------------------------
-///
-/// Returns all words for the currently active language.
-/// Automatically refreshes when:
-/// - Language changes
-/// - Words are added/updated/deleted (manual invalidation)
-///
 
 final wordListProvider =
 FutureProvider((ref) async {
   ref.watch(activeLanguageTriggerProvider);
-
-  final repo = ref.watch(wordRepositoryProvider);
-  return repo.listWords();
+  return ref.watch(wordRepositoryProvider).listWords();
 });
 
 /// ---------------------------------------------------------------------------
-/// WORD COUNT PROVIDER (Language-scoped)
+/// WORD COUNT
 /// ---------------------------------------------------------------------------
-///
-/// Returns total number of learned words for active language.
-/// Used for header badges, dictionary summary, etc.
-///
 
 final wordCountProvider =
 FutureProvider<int>((ref) async {
   ref.watch(activeLanguageTriggerProvider);
-
-  final repo = ref.watch(wordRepositoryProvider);
-  return repo.getWordCount();
+  return ref.watch(wordRepositoryProvider).getWordCount();
 });
 
 /// ---------------------------------------------------------------------------
-/// WORD SUGGESTIONS PROVIDER
+/// WORD SUGGESTIONS (FIXED)
 /// ---------------------------------------------------------------------------
 ///
-/// This provider is parameterised by a search prefix.
-/// Useful for "Add Word" modal suggestions.
+/// Suggestions depend on:
+/// - active language
+/// - current input prefix
+///
+/// We also guard against empty prefixes.
 ///
 
 final wordSuggestionsProvider =
 FutureProvider.family<List<String>, String>((ref, prefix) async {
-  final repo = ref.watch(wordRepositoryProvider);
-  return repo.suggestWords(prefix);
+  // 🔑 Make suggestions language-aware
+  ref.watch(activeLanguageTriggerProvider);
+
+  // Guard: don't query for empty input
+  if (prefix.trim().isEmpty) {
+    return const [];
+  }
+
+  return ref
+      .watch(wordRepositoryProvider)
+      .suggestWords(prefix.trim());
 });
