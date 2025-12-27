@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../state/providers.dart';
 import '../word/add_word_screen.dart';
 import '../language/language_selection_screen.dart';
+import '../word/word_detail_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -96,6 +97,15 @@ class HomeScreen extends ConsumerWidget {
                       final word = words[index];
                       return _WordListItem(
                         text: word.wordText,
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => WordDetailScreen(
+                                word: word,
+                              ),
+                            ),
+                          );
+                        },
                       );
                     },
                   );
@@ -124,9 +134,11 @@ class HomeScreen extends ConsumerWidget {
 ///
 class _WordListItem extends StatelessWidget {
   final String text;
+  final VoidCallback onTap;
 
   const _WordListItem({
     required this.text,
+    required this.onTap,
   });
 
   @override
@@ -134,19 +146,24 @@ class _WordListItem extends StatelessWidget {
     return Material(
       color: Colors.grey.shade100,
       borderRadius: BorderRadius.circular(10),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          vertical: 16,
-          horizontal: 16,
-        ),
-        child: Text(
-          text,
-          style: Theme.of(context).textTheme.bodyLarge,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            vertical: 16,
+            horizontal: 16,
+          ),
+          child: Text(
+            text,
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
         ),
       ),
     );
   }
 }
+
 
 /// ---------------------------------------------------------------------------
 /// EMPTY STATE

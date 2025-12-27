@@ -4,6 +4,7 @@ import '../../domain/repositories/word_repository.dart';
 import '../local/db/app_database.dart';
 import '../local/db/daos/words_dao.dart';
 import '../preferences/preferences_repository.dart';
+import '../local/db/app_database.dart';
 
 class WordRepositoryImpl implements WordRepository {
   final WordsDao wordsDao;
@@ -65,20 +66,19 @@ class WordRepositoryImpl implements WordRepository {
 
   @override
   Future<void> updateWord({
-    required String id,
-    required String wordText,
-    String? shortMeaning,
+    required Word word
   }) async {
     final language = await _requireActiveLanguage();
     final now = DateTime.now().millisecondsSinceEpoch;
 
     await wordsDao.updateWord(
       WordsCompanion(
-        id: Value(id),
-        wordText: Value(wordText.trim()),
+        id: Value(word.id),
+        wordText: Value(word.wordText.trim()),
         languageCode: Value(language),
-        shortMeaning: Value(shortMeaning),
+        shortMeaning: Value(word.shortMeaning),
         updatedAt: Value(now),
+        createdAt: Value(word.createdAt)
       ),
     );
   }

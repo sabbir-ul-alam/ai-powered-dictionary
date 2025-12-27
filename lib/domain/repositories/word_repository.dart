@@ -6,9 +6,7 @@ abstract class WordRepository {
   });
 
   Future<void> updateWord({
-    required String id,
-    required String wordText,
-    String? shortMeaning,
+    required Word word
   });
 
   Future<void> deleteWord(String id);
