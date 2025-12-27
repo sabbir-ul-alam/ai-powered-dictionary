@@ -1,6 +1,6 @@
+import 'package:apd/presentation/screens/language/language_selection_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'presentation/debug/language_debug_screen.dart';
 
 void main() {
   runApp(
@@ -17,7 +17,7 @@ class DictionaryApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: LanguageDebugScreen(),
+      home: LanguageSelectionScreen(),
     );
   }
 }
