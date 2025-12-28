@@ -14,7 +14,7 @@ class AiDictionaryService {
   final String endpoint;
 
   AiDictionaryService({
-    // this.apiKey = 'AIzaSyCkA8gnSR4vpdNI83FbWW-VoUfa__HDw0M',
+    required this.apiKey,
     this.endpoint =
     'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
   });
@@ -27,7 +27,7 @@ class AiDictionaryService {
       Uri.parse(endpoint),
       headers: {
         'Content-Type': 'application/json',
-        // 'x-goog-api-key':'AIzaSyCkA8gnSR4vpdNI83FbWW-VoUfa__HDw0M'
+        'x-goog-api-key':apiKey
       },
       body: jsonEncode({
         "contents": [

@@ -16,17 +16,17 @@ class LanguageRepositoryImpl implements LanguageRepository {
   }
 
   @override
-  Future<void> setActiveLanguage(String code) async {
+  Future<void> setActiveLanguage(Language lang) async {
     // Ensure language exists
     await languagesDao.upsertLanguage(
       LanguagesCompanion.insert(
-        code: code,
-        displayName: code, // replace later with mapping
+        code: lang.code,
+        displayName: lang.displayName, // replace later with mapping
         createdAt: DateTime.now().millisecondsSinceEpoch,
       ),
     );
 
-    await preferences.setActiveLanguage(code);
+    await preferences.setActiveLanguage(lang.code);
   }
 
   @override

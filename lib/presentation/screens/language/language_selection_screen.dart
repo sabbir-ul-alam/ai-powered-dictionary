@@ -1,8 +1,8 @@
+import 'package:apd/data/local/db/app_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../state/providers.dart';
-// import '../home/home_screen.dart';
 
 class LanguageSelectionScreen extends ConsumerStatefulWidget {
   const LanguageSelectionScreen({super.key});
@@ -14,7 +14,7 @@ class LanguageSelectionScreen extends ConsumerStatefulWidget {
 
 class _LanguageSelectionScreenState
     extends ConsumerState<LanguageSelectionScreen> {
-  String? _selectedLanguageCode;
+   Language? _selectedLanguage;
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +62,7 @@ class _LanguageSelectionScreenState
                 /// LANGUAGE DROPDOWN
                 /// -----------------------------------------------------------------
                 DropdownButtonFormField<String>(
-                  value: _selectedLanguageCode,
+                  value: _selectedLanguage?.code,
                   hint: const Text('Select language'),
                   items: languages.map((lang) {
                     return DropdownMenuItem<String>(
@@ -72,7 +72,8 @@ class _LanguageSelectionScreenState
                   }).toList(),
                   onChanged: (value) {
                     setState(() {
-                      _selectedLanguageCode = value;
+                      _selectedLanguage =
+                          languages.firstWhere((lang) => lang.code == value);
                     });
                   },
                   decoration: const InputDecoration(
@@ -88,7 +89,7 @@ class _LanguageSelectionScreenState
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _selectedLanguageCode == null
+                    onPressed: _selectedLanguage== null
                         ? null
                         : () async {
                       await _onContinuePressed(
@@ -111,13 +112,13 @@ class _LanguageSelectionScreenState
       BuildContext context,
       WidgetRef ref,
       ) async {
-    final code = _selectedLanguageCode;
-    if (code == null) return;
+    final lang = _selectedLanguage;
+    if (lang == null) return;
 
     // Persist active language
     await ref
         .read(languageRepositoryProvider)
-        .setActiveLanguage(code);
+        .setActiveLanguage(lang);
 
     // Trigger reactive refresh
     ref.read(activeLanguageTriggerProvider.notifier).state++;

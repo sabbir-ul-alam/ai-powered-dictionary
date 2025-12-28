@@ -12,10 +12,11 @@ class WordMetadataDao extends DatabaseAccessor<AppDatabase>
   Future<void> upsertMetadata(WordMetadataCompanion data) =>
       into(wordMetadata).insertOnConflictUpdate(data);
 
-  Future<WordMetadataData?> getByWordId(String wordId) =>
-      (select(wordMetadata)
+  Future<WordMetadataData?> getByWordId(String wordId) {
+    return (select(wordMetadata)
         ..where((m) => m.wordId.equals(wordId)))
           .getSingleOrNull();
+  }
 
 
 ///Test
