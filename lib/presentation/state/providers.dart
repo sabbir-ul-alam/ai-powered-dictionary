@@ -41,8 +41,7 @@ final wordMetadataDaoProvider = Provider<WordMetadataDao>((ref) {
 /// PREFERENCES
 /// ---------------------------------------------------------------------------
 
-final preferencesRepositoryProvider =
-Provider<PreferencesRepository>((ref) {
+final preferencesRepositoryProvider = Provider<PreferencesRepository>((ref) {
   return PreferencesRepository();
 });
 
@@ -50,16 +49,14 @@ Provider<PreferencesRepository>((ref) {
 /// REPOSITORIES
 /// ---------------------------------------------------------------------------
 
-final languageRepositoryProvider =
-Provider<LanguageRepository>((ref) {
+final languageRepositoryProvider = Provider<LanguageRepository>((ref) {
   return LanguageRepositoryImpl(
     ref.watch(languagesDaoProvider),
     ref.watch(preferencesRepositoryProvider),
   );
 });
 
-final wordRepositoryProvider =
-Provider<WordRepository>((ref) {
+final wordRepositoryProvider = Provider<WordRepository>((ref) {
   return WordRepositoryImpl(
     ref.watch(wordsDaoProvider),
     ref.watch(preferencesRepositoryProvider),
@@ -69,19 +66,14 @@ Provider<WordRepository>((ref) {
 /// ---------------------------------------------------------------------------
 /// ACTIVE LANGUAGE TRIGGER
 /// ---------------------------------------------------------------------------
-///
-/// Any language or word mutation must bump this.
-///
 
-final activeLanguageTriggerProvider =
-StateProvider<int>((ref) => 0);
+final activeLanguageTriggerProvider = StateProvider<int>((ref) => 0);
 
 /// ---------------------------------------------------------------------------
 /// ACTIVE LANGUAGE
 /// ---------------------------------------------------------------------------
 
-final activeLanguageProvider =
-FutureProvider((ref) async {
+final activeLanguageProvider = FutureProvider((ref) async {
   ref.watch(activeLanguageTriggerProvider);
   return ref.watch(languageRepositoryProvider).getActiveLanguage();
 });
@@ -90,8 +82,7 @@ FutureProvider((ref) async {
 /// WORD LIST
 /// ---------------------------------------------------------------------------
 
-final wordListProvider =
-FutureProvider((ref) async {
+final wordListProvider = FutureProvider((ref) async {
   ref.watch(activeLanguageTriggerProvider);
   return ref.watch(wordRepositoryProvider).listWords();
 });
@@ -100,34 +91,36 @@ FutureProvider((ref) async {
 /// WORD COUNT
 /// ---------------------------------------------------------------------------
 
-final wordCountProvider =
-FutureProvider<int>((ref) async {
+final wordCountProvider = FutureProvider<int>((ref) async {
   ref.watch(activeLanguageTriggerProvider);
   return ref.watch(wordRepositoryProvider).getWordCount();
 });
 
 /// ---------------------------------------------------------------------------
-/// WORD SUGGESTIONS (FIXED)
+/// WORD SUGGESTIONS (prefix; Add Word)
 /// ---------------------------------------------------------------------------
-///
-/// Suggestions depend on:
-/// - active language
-/// - current input prefix
-///
-/// We also guard against empty prefixes.
-///
 
 final wordSuggestionsProvider =
 FutureProvider.family<List<String>, String>((ref, prefix) async {
-  // 🔑 Make suggestions language-aware
   ref.watch(activeLanguageTriggerProvider);
 
-  // Guard: don't query for empty input
-  if (prefix.trim().isEmpty) {
-    return const [];
-  }
+  final p = prefix.trim();
+  if (p.isEmpty) return const [];
 
-  return ref
-      .watch(wordRepositoryProvider)
-      .suggestWords(prefix.trim());
+  return ref.watch(wordRepositoryProvider).suggestWords(p);
+});
+
+/// ---------------------------------------------------------------------------
+/// SEARCH (contains; Home)
+/// ---------------------------------------------------------------------------
+
+final wordSearchQueryProvider = StateProvider<String>((ref) => '');
+
+final wordSearchResultsProvider = FutureProvider((ref) async {
+  ref.watch(activeLanguageTriggerProvider);
+
+  final query = ref.watch(wordSearchQueryProvider).trim();
+  if (query.isEmpty) return const <Word>[];
+
+  return ref.watch(wordRepositoryProvider).searchWords(query);
 });

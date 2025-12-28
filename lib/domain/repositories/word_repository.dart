@@ -9,6 +9,12 @@ abstract class WordRepository {
     required Word word
   });
 
+  /// -------------------------------------------------------------------------
+  /// REAL SEARCH (NEW)
+  /// -------------------------------------------------------------------------
+  /// Contains search returning full Word objects (id included).
+  Future<List<Word>> searchWords(String query);
+
   Future<void> deleteWord(String id);
 
   Future<List<Word>> listWords();

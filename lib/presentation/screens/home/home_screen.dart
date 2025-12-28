@@ -1,25 +1,63 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../state/providers.dart';
-import '../word/add_word_screen.dart';
 import '../language/language_selection_screen.dart';
+import '../word/add_word_screen.dart';
 import '../word/word_detail_screen.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  final _searchController = TextEditingController();
+  Timer? _debounce;
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    // Debounce to avoid spamming providers/DB on every keystroke
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 250), () {
+      ref.read(wordSearchQueryProvider.notifier).state = value;
+    });
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    ref.read(wordSearchQueryProvider.notifier).state = '';
+    FocusScope.of(context).unfocus();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final activeLanguageAsync = ref.watch(activeLanguageProvider);
-    final wordListAsync = ref.watch(wordListProvider);
     final wordCountAsync = ref.watch(wordCountProvider);
+
+    // Decide whether we are in "search mode"
+    final searchQuery = ref.watch(wordSearchQueryProvider);
+    final isSearching = searchQuery.trim().isNotEmpty;
+
+    // Use either full list or search results depending on query
+    final wordsAsync = isSearching
+        ? ref.watch(wordSearchResultsProvider)
+        : ref.watch(wordListProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: activeLanguageAsync.when(
-          data: (language) =>
-              Text(language?.displayName ?? 'Dictionary'),
+          data: (language) => Text(language?.displayName ?? 'Dictionary'),
           loading: () => const Text('Loading…'),
           error: (_, __) => const Text('Dictionary'),
         ),
@@ -28,7 +66,6 @@ class HomeScreen extends ConsumerWidget {
             tooltip: 'Change language',
             icon: const Icon(Icons.language),
             onPressed: () {
-              // Allow user to change dictionary explicitly
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => const LanguageSelectionScreen(),
@@ -40,7 +77,7 @@ class HomeScreen extends ConsumerWidget {
       ),
 
       /// ---------------------------------------------------------------------
-      /// ADD WORD BUTTON
+      /// ADD WORD
       /// ---------------------------------------------------------------------
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
@@ -50,7 +87,7 @@ class HomeScreen extends ConsumerWidget {
             ),
           );
 
-          // Refresh list + count after returning
+          // Refresh list/count (and any search results if active)
           ref.read(activeLanguageTriggerProvider.notifier).state++;
         },
         child: const Icon(Icons.add),
@@ -62,7 +99,29 @@ class HomeScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             /// ---------------------------------------------------------------
-            /// WORD COUNT
+            /// SEARCH BAR
+            /// ---------------------------------------------------------------
+            TextField(
+              controller: _searchController,
+              onChanged: _onSearchChanged,
+              decoration: InputDecoration(
+                hintText: 'Search words',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchController.text.isEmpty
+                    ? null
+                    : IconButton(
+                  tooltip: 'Clear',
+                  icon: const Icon(Icons.close),
+                  onPressed: _clearSearch,
+                ),
+                border: const OutlineInputBorder(),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            /// ---------------------------------------------------------------
+            /// WORD COUNT (total for active language)
             /// ---------------------------------------------------------------
             wordCountAsync.when(
               data: (count) => Text(
@@ -80,31 +139,85 @@ class HomeScreen extends ConsumerWidget {
             const Divider(),
 
             /// ---------------------------------------------------------------
-            /// WORD LIST
+            /// WORD LIST OR SEARCH RESULTS
             /// ---------------------------------------------------------------
             Expanded(
-              child: wordListAsync.when(
+              child: wordsAsync.when(
                 data: (words) {
-                  if (words.isEmpty) {
+                  // wordSearchResultsProvider returns List<String> right now (prefix suggestions),
+                  // while wordListProvider returns List<Word>.
+                  //
+                  // To keep Phase 1 stable, we handle both types safely here.
+                  //
+                  // If you implement real repository.searchWords() returning List<Word>,
+                  // then this becomes a single path.
+                  if (words is List<String>) {
+                    if (words.isEmpty) {
+                      return _SearchEmptyState(query: searchQuery.trim());
+                    }
+                    return ListView.separated(
+                      itemCount: words.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final word = words[index];
+                        return _WordListItem(
+                          text: word.wordText,
+                          onTap: () {
+                            // We cannot open detail reliably from just the text,
+                            // because we need wordId.
+                            //
+                            // Best practice: implement repository.searchWords()
+                            // that returns Word objects including id.
+                            //
+                            // For now, keep it simple: fill search box with exact suggestion.
+                            _searchController.text = word.wordText;
+                            _searchController.selection = TextSelection.fromPosition(
+                              TextPosition(offset: _searchController.text.length),
+                            );
+                            ref.read(wordSearchQueryProvider.notifier).state = word.wordText;
+                          },
+                        );
+                      },
+                    );
+                  }
+
+                  // Normal path: list of Word rows
+                  if (words is List && words.isEmpty) {
                     return const _EmptyState();
                   }
 
+                  if (words is! List) {
+                    return const Center(child: Text('Unexpected data'));
+                  }
+
+                  // Safe cast: words from wordListProvider are List<Word>
+                  final wordRows = words;
+
                   return ListView.separated(
-                    itemCount: words.length,
-                    separatorBuilder: (_, __) =>
-                    const SizedBox(height: 8),
+                    itemCount: wordRows.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
-                      final word = words[index];
+                      final word = wordRows[index];
+
                       return _WordListItem(
                         text: word.wordText,
-                        onTap: () {
-                          Navigator.of(context).push(
+                        onTap: () async {
+                          await Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (_) => WordDetailScreen(
                                 word: word,
                               ),
                             ),
                           );
+
+
+// ✅ SAFETY CHECK
+                          if (!mounted) return;
+
+                          ref.read(activeLanguageTriggerProvider.notifier).state++;
+
+                          // If user edited/deleted, refresh list and count
+                          ref.read(activeLanguageTriggerProvider.notifier).state++;
                         },
                       );
                     },
@@ -128,10 +241,7 @@ class HomeScreen extends ConsumerWidget {
 /// ---------------------------------------------------------------------------
 /// WORD LIST ITEM
 /// ---------------------------------------------------------------------------
-///
-/// Minimal list item for Phase 1.
-/// Metadata, pronunciation, and actions come later.
-///
+
 class _WordListItem extends StatelessWidget {
   final String text;
   final VoidCallback onTap;
@@ -164,13 +274,10 @@ class _WordListItem extends StatelessWidget {
   }
 }
 
+/// ---------------------------------------------------------------------------
+/// EMPTY STATE (no words in dictionary)
+/// ---------------------------------------------------------------------------
 
-/// ---------------------------------------------------------------------------
-/// EMPTY STATE
-/// ---------------------------------------------------------------------------
-///
-/// Shown when no words exist for the selected language.
-///
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
 
@@ -199,6 +306,26 @@ class _EmptyState extends StatelessWidget {
             style: TextStyle(color: Colors.grey),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// ---------------------------------------------------------------------------
+/// SEARCH EMPTY STATE
+/// ---------------------------------------------------------------------------
+
+class _SearchEmptyState extends StatelessWidget {
+  final String query;
+
+  const _SearchEmptyState({required this.query});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        'No results for "$query"',
+        style: const TextStyle(color: Colors.grey),
       ),
     );
   }

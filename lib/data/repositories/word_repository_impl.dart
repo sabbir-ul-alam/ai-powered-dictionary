@@ -28,7 +28,7 @@ class WordRepositoryImpl implements WordRepository {
     final language = await _requireActiveLanguage();
     final now = DateTime.now().millisecondsSinceEpoch;
 
-    await wordsDao.insertWord(
+    await wordsDao.insertOrReviveWord(
       WordsCompanion.insert(
         id: _uuid.v4(),
         wordText: wordText.trim(),
@@ -36,6 +36,7 @@ class WordRepositoryImpl implements WordRepository {
         shortMeaning: Value.absent(),
         createdAt: now,
         updatedAt: now,
+        deletedAt: const Value(null),
       ),
     );
   }
@@ -62,6 +63,12 @@ class WordRepositoryImpl implements WordRepository {
   Future<void> deleteWord(String id) async {
     final now = DateTime.now().millisecondsSinceEpoch;
     await wordsDao.softDeleteWord(id, now);
+  }
+
+  @override
+  Future<List<Word>> searchWords(String query) async {
+    final language = await _requireActiveLanguage();
+    return wordsDao.searchWords(language, query.trim());
   }
 
   @override
