@@ -30,25 +30,27 @@ class _WordDetailScreenState
 
   bool _isEditing = false;
   bool _isSaving = false;
+  bool _isGenerating = false;
+
 
   @override
   void initState() {
     super.initState();
     // TEMP: seed metadata for testing
-    Future.microtask(() async {
-      final dao = ref.read(wordMetadataDaoProvider);
-
-      await dao.upsertMetadataForWord(
-        wordId: widget.word.id,
-        metadataJson: jsonEncode({
-          'meaning': 'to examine something carefully',
-          'examples': [
-            'She tested the new feature before release.',
-            'The teacher tested the students.',
-          ],
-        }),
-      );
-    });
+    // Future.microtask(() async {
+    //   final dao = ref.read(wordMetadataDaoProvider);
+    //
+    //   await dao.upsertMetadataForWord(
+    //     wordId: widget.word.id,
+    //     metadataJson: jsonEncode({
+    //       'meaning': 'to examine something carefully',
+    //       'examples': [
+    //         'She tested the new feature before release.',
+    //         'The teacher tested the students.',
+    //       ],
+    //     }),
+    //   );
+    // });
     _wordController =
         TextEditingController(text: widget.word.wordText);
     _meaningController = TextEditingController();
@@ -192,11 +194,72 @@ class _WordDetailScreenState
                 );
               },
           ),
+            if (_isEditing)
+              TextButton.icon(
+                icon: _isGenerating
+                    ? const SizedBox(
+                  height: 16,
+                  width: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+                    : const Icon(Icons.auto_awesome),
+                label: const Text('Generate with AI'),
+                onPressed: _isGenerating ? null : _generateWithAi,
+              ),
+
+
           ],
         ),
       ),
     );
   }
+  ///-----------------------------------------
+  /// Generate with AI
+  /// -----------------------------------------
+  Future<void> _generateWithAi() async {
+    setState(() {
+      _isGenerating = true;
+    });
+
+    try {
+      final language =
+      await ref.read(languageRepositoryProvider).getActiveLanguage();
+
+      final aiResult =
+      await ref.read(aiDictionaryServiceProvider).generate(
+        word: _wordController.text,
+        languageName: language!.displayName,
+      );
+
+      _meaningController.text = aiResult.meaning;
+      _examplesController.text =
+          aiResult.examples.join('\n');
+
+      print(aiResult.toString());
+    } catch (e) {
+      if (mounted) {
+        String error = e.toString();
+        print('##############error####################');
+        print(error);
+        print('##############error####################');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            // content: Text('Failed to generate meaning'),
+            content: Text(error),
+
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGenerating = false;
+        });
+      }
+    }
+  }
+
 
   /// -------------------------------------------------------------------------
   /// APP BAR ACTIONS

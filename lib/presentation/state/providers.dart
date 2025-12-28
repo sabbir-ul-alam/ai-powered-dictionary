@@ -12,6 +12,7 @@ import '../../data/repositories/language_repository_impl.dart';
 
 import '../../domain/repositories/word_repository.dart';
 import '../../domain/repositories/language_repository.dart';
+import '../../data/ai/ai_dictionary_service.dart';
 
 /// ---------------------------------------------------------------------------
 /// DATABASE
@@ -129,3 +130,10 @@ final wordSearchResultsProvider = FutureProvider((ref) async {
 /// ---------------------------------------------------------------------------
 /// MetaData (AI / USER / SYSTEM)
 /// ---------------------------------------------------------------------------
+final aiDictionaryServiceProvider =
+Provider<AiDictionaryService>((ref) {
+  //Inject properly later (env, secrets manager, etc.)
+  return AiDictionaryService(
+    apiKey: 'YOUR_API_KEY_HERE',
+  );
+});

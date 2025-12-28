@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -157,9 +159,40 @@ class _AddWordScreenState extends ConsumerState<AddWordScreen> {
     });
 
     try {
-      await ref.read(wordRepositoryProvider).addWord(
-        wordText: _controller.text,
+      final wordId = await ref.read(wordRepositoryProvider).addWord(
+        text: _controller.text,
       );
+
+
+
+// Auto-generate metadata (non-blocking)
+      Future.microtask(() async {
+        try {
+          final language =
+          await ref.read(languageRepositoryProvider).getActiveLanguage();
+
+          final aiResult =
+          await ref.read(aiDictionaryServiceProvider).generate(
+            word: _controller.text,
+            languageName: language!.displayName,
+          );
+
+          await ref
+              .read(wordMetadataDaoProvider)
+              .upsertMetadataForWord(
+            wordId: wordId,
+            metadataJson: jsonEncode({
+              'meaning': aiResult.meaning,
+              'examples': aiResult.examples,
+            }),
+          );
+
+          ref.read(activeLanguageTriggerProvider.notifier).state++;
+        } catch (_) {
+          // Silent failure: user can regenerate later
+        }
+      });
+
 
       // Force refresh of Home providers
       ref.read(activeLanguageTriggerProvider.notifier).state++;

@@ -22,16 +22,17 @@ class WordRepositoryImpl implements WordRepository {
   }
 
   @override
-  Future<void> addWord({
-    required String wordText,
+  Future<String> addWord({
+    required String text,
+    String? shortMeaning,
   }) async {
     final language = await _requireActiveLanguage();
     final now = DateTime.now().millisecondsSinceEpoch;
-
+    final wordId = _uuid.v4();
     await wordsDao.insertOrReviveWord(
       WordsCompanion.insert(
-        id: _uuid.v4(),
-        wordText: wordText.trim(),
+        id: wordId,
+        wordText: text.trim(),
         languageCode: language,
         shortMeaning: Value.absent(),
         createdAt: now,
@@ -39,6 +40,7 @@ class WordRepositoryImpl implements WordRepository {
         deletedAt: const Value(null),
       ),
     );
+    return wordId;
   }
 
   @override

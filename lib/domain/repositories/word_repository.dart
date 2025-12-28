@@ -1,8 +1,13 @@
 import '../../data/local/db/app_database.dart';
 
 abstract class WordRepository {
-  Future<void> addWord({
-    required String wordText,
+  /// -------------------------------------------------------------------------
+  /// CREATE
+  /// -------------------------------------------------------------------------
+  /// Returns the generated wordId.
+  Future<String> addWord({
+    required String text,
+    String? shortMeaning,
   });
 
   Future<void> updateWord({
