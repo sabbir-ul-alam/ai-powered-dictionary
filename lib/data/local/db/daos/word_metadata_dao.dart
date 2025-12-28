@@ -16,4 +16,38 @@ class WordMetadataDao extends DatabaseAccessor<AppDatabase>
       (select(wordMetadata)
         ..where((m) => m.wordId.equals(wordId)))
           .getSingleOrNull();
+
+
+///Test
+  Future<void> upsertMetadataForWord({
+    required String wordId,
+    required String metadataJson,
+  }) async {
+    final existing = await (select(wordMetadata)
+      ..where((m) => m.wordId.equals(wordId)))
+        .getSingleOrNull();
+
+    if (existing != null) {
+      await (update(wordMetadata)
+        ..where((m) => m.wordId.equals(wordId)))
+          .write(
+        WordMetadataCompanion(
+          metadataJson: Value(metadataJson),
+          updatedAt: Value(DateTime.now().millisecondsSinceEpoch),
+        ),
+      );
+    } else {
+      await into(wordMetadata).insert(
+        WordMetadataCompanion.insert(
+          source: 'USER',
+          version: 1,
+          wordId: wordId,
+          metadataJson: metadataJson,
+          updatedAt: DateTime.now().millisecondsSinceEpoch,
+        ),
+      );
+    }
+  }
+
+
 }

@@ -124,3 +124,8 @@ final wordSearchResultsProvider = FutureProvider((ref) async {
 
   return ref.watch(wordRepositoryProvider).searchWords(query);
 });
+
+
+/// ---------------------------------------------------------------------------
+/// MetaData (AI / USER / SYSTEM)
+/// ---------------------------------------------------------------------------
