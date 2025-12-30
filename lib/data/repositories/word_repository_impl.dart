@@ -44,9 +44,9 @@ class WordRepositoryImpl implements WordRepository {
   }
 
   @override
-  Future<List<Word>> listWords() async {
+  Future<List<Word>> listWords({bool favoritesOnly = false}) async {
     final language = await _requireActiveLanguage();
-    return wordsDao.listWords(language);
+    return wordsDao.listWords(language, favoritesOnly: favoritesOnly);
   }
 
   @override
@@ -56,9 +56,9 @@ class WordRepositoryImpl implements WordRepository {
   }
 
   @override
-  Future<int> getWordCount() async {
+  Future<int> getWordCount({bool favoritesOnly = false}) async {
     final language = await _requireActiveLanguage();
-    return wordsDao.countWords(language);
+    return wordsDao.countWords(language, favoritesOnly: favoritesOnly);
   }
 
   @override
@@ -68,9 +68,12 @@ class WordRepositoryImpl implements WordRepository {
   }
 
   @override
-  Future<List<Word>> searchWords(String query) async {
+  Future<List<Word>> searchWords(
+      String query, {
+        bool favoritesOnly = false,
+      }) async {
     final language = await _requireActiveLanguage();
-    return wordsDao.searchWords(language, query.trim());
+    return wordsDao.searchWords(language, query, favoritesOnly: favoritesOnly);
   }
 
   @override
@@ -90,5 +93,14 @@ class WordRepositoryImpl implements WordRepository {
         createdAt: Value(word.createdAt)
       ),
     );
+  }
+
+
+  @override
+  Future<void> setFavorite({
+    required String id,
+    required bool isFavorite,
+  }) async {
+    await wordsDao.setFavorite(id: id, isFavorite: isFavorite);
   }
 }

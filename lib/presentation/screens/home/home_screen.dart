@@ -44,7 +44,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final activeLanguageAsync = ref.watch(activeLanguageProvider);
     final wordCountAsync = ref.watch(wordCountProvider);
-
+    final favoritesOnly = ref.watch(favoritesOnlyProvider);
     // Decide whether we are in "search mode"
     final searchQuery = ref.watch(wordSearchQueryProvider);
     final isSearching = searchQuery.trim().isNotEmpty;
@@ -123,16 +123,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             /// ---------------------------------------------------------------
             /// WORD COUNT (total for active language)
             /// ---------------------------------------------------------------
-            wordCountAsync.when(
-              data: (count) => Text(
-                '$count words',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              loading: () => const SizedBox(
-                height: 20,
-                child: LinearProgressIndicator(),
-              ),
-              error: (_, __) => const Text('—'),
+            // wordCountAsync.when(
+            //   data: (count) => Text(
+            //     '$count words',
+            //     style: Theme.of(context).textTheme.titleMedium,
+            //   ),
+            //   loading: () => const SizedBox(
+            //     height: 20,
+            //     child: LinearProgressIndicator(),
+            //   ),
+            //   error: (_, __) => const Text('—'),
+            // ),
+            //
+            // const SizedBox(height: 12),
+            // const Divider(),
+            /// All / Favourites toggle
+            Row(
+              children: [
+                ChoiceChip(
+                  showCheckmark: false,
+                  label: const Text('All'),
+                  selected: !favoritesOnly,
+                  onSelected: (_) {
+                    ref.read(favoritesOnlyProvider.notifier).state = false;
+                    ref.read(activeLanguageTriggerProvider.notifier).state++;
+                  },
+                ),
+                const SizedBox(width: 8),
+                ChoiceChip(
+                  showCheckmark: false,
+                  label: const Text('Favourites'),
+                  selected: favoritesOnly,
+                  onSelected: (_) {
+                    ref.read(favoritesOnlyProvider.notifier).state = true;
+                    ref.read(activeLanguageTriggerProvider.notifier).state++;
+                  },
+                ),
+                const Spacer(),
+                wordCountAsync.when(
+                  data: (c) => Text('$c'),
+                  loading: () => const SizedBox(
+                    height: 16,
+                    width: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  error: (_, __) => const Text('—'),
+                ),
+              ],
             ),
 
             const SizedBox(height: 12),
@@ -143,93 +180,60 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             /// ---------------------------------------------------------------
             Expanded(
               child: wordsAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (_, __) => const Center(child: Text('Failed to load words')),
                 data: (words) {
-                  // wordSearchResultsProvider returns List<String> right now (prefix suggestions),
-                  // while wordListProvider returns List<Word>.
-                  //
-                  // To keep Phase 1 stable, we handle both types safely here.
-                  //
-                  // If you implement real repository.searchWords() returning List<Word>,
-                  // then this becomes a single path.
-                  if (words is List<String>) {
-                    if (words.isEmpty) {
-                      return _SearchEmptyState(query: searchQuery.trim());
-                    }
-                    return ListView.separated(
-                      itemCount: words.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8),
-                      itemBuilder: (context, index) {
-                        final word = words[index];
-                        return _WordListItem(
-                          text: word.wordText,
-                          onTap: () {
-                            // We cannot open detail reliably from just the text,
-                            // because we need wordId.
-                            //
-                            // Best practice: implement repository.searchWords()
-                            // that returns Word objects including id.
-                            //
-                            // For now, keep it simple: fill search box with exact suggestion.
-                            _searchController.text = word.wordText;
-                            _searchController.selection = TextSelection.fromPosition(
-                              TextPosition(offset: _searchController.text.length),
-                            );
-                            ref.read(wordSearchQueryProvider.notifier).state = word.wordText;
-                          },
-                        );
-                      },
-                    );
+                  if (words.isEmpty) {
+                    return _SearchEmptyState(query: searchQuery.trim());
                   }
-
-                  // Normal path: list of Word rows
-                  if (words is List && words.isEmpty) {
-                    return const _EmptyState();
-                  }
-
-                  if (words is! List) {
-                    return const Center(child: Text('Unexpected data'));
-                  }
-
-                  // Safe cast: words from wordListProvider are List<Word>
-                  final wordRows = words;
-
                   return ListView.separated(
-                    itemCount: wordRows.length,
+                    itemCount: words.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
-                      final word = wordRows[index];
-
+                      final word = words[index];
                       return _WordListItem(
                         text: word.wordText,
+                        isFavorite: word.isFavorite,
                         onTap: () async {
                           await Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) => WordDetailScreen(
-                                word: word,
-                              ),
+                              builder: (_) => WordDetailScreen(word: word),
                             ),
                           );
-
-
-// ✅ SAFETY CHECK
                           if (!mounted) return;
-
-                          ref.read(activeLanguageTriggerProvider.notifier).state++;
-
-                          // If user edited/deleted, refresh list and count
-                          ref.read(activeLanguageTriggerProvider.notifier).state++;
+                          ref
+                              .read(activeLanguageTriggerProvider.notifier)
+                              .state++;
                         },
+                        onToggleFavorite: () async {
+                          await ref.read(wordRepositoryProvider).setFavorite(
+                            id: word.id,
+                            isFavorite: !word.isFavorite,
+                          );
+                          ref
+                              .read(activeLanguageTriggerProvider.notifier)
+                              .state++;
+                        },
+
+                        // onTap: () {
+                        //   // We cannot open detail reliably from just the text,
+                        //   // because we need wordId.
+                        //   //
+                        //   // Best practice: implement repository.searchWords()
+                        //   // that returns Word objects including id.
+                        //   //
+                        //   // For now, keep it simple: fill search box with exact suggestion.
+                        //   _searchController.text = word.wordText;
+                        //   _searchController.selection = TextSelection.fromPosition(
+                        //     TextPosition(offset: _searchController.text.length),
+                        //   );
+                        //   ref.read(wordSearchQueryProvider.notifier).state = word.wordText;
+                        // },
                       );
                     },
                   );
-                },
-                loading: () => const Center(
-                  child: CircularProgressIndicator(),
-                ),
-                error: (_, __) => const Center(
-                  child: Text('Failed to load words'),
-                ),
-              ),
+                }
+            ),
             ),
           ],
         ),
@@ -245,11 +249,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 class _WordListItem extends StatelessWidget {
   final String text;
   final VoidCallback onTap;
+  final bool isFavorite;
+  final VoidCallback onToggleFavorite;
+
+
 
   const _WordListItem({
     required this.text,
+    required this.isFavorite,
     required this.onTap,
-  });
+    required this.onToggleFavorite,  });
 
   @override
   Widget build(BuildContext context) {
@@ -264,9 +273,20 @@ class _WordListItem extends StatelessWidget {
             vertical: 16,
             horizontal: 16,
           ),
-          child: Text(
-            text,
-            style: Theme.of(context).textTheme.bodyLarge,
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  text,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              ),
+              IconButton(
+                tooltip: 'Favourite',
+                icon: Icon(isFavorite ? Icons.star : Icons.star_border),
+                onPressed: onToggleFavorite,
+              ),
+            ],
           ),
         ),
       ),

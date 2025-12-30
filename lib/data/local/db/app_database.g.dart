@@ -83,6 +83,21 @@ class $WordsTable extends Words with TableInfo<$WordsTable, Word> {
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _isFavoriteMeta = const VerificationMeta(
+    'isFavorite',
+  );
+  @override
+  late final GeneratedColumn<bool> isFavorite = GeneratedColumn<bool>(
+    'is_favorite',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_favorite" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -92,6 +107,7 @@ class $WordsTable extends Words with TableInfo<$WordsTable, Word> {
     createdAt,
     updatedAt,
     deletedAt,
+    isFavorite,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -160,6 +176,12 @@ class $WordsTable extends Words with TableInfo<$WordsTable, Word> {
         deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
       );
     }
+    if (data.containsKey('is_favorite')) {
+      context.handle(
+        _isFavoriteMeta,
+        isFavorite.isAcceptableOrUnknown(data['is_favorite']!, _isFavoriteMeta),
+      );
+    }
     return context;
   }
 
@@ -202,6 +224,11 @@ class $WordsTable extends Words with TableInfo<$WordsTable, Word> {
         DriftSqlType.int,
         data['${effectivePrefix}deleted_at'],
       ),
+      isFavorite:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}is_favorite'],
+          )!,
     );
   }
 
@@ -219,6 +246,7 @@ class Word extends DataClass implements Insertable<Word> {
   final int createdAt;
   final int updatedAt;
   final int? deletedAt;
+  final bool isFavorite;
   const Word({
     required this.id,
     required this.wordText,
@@ -227,6 +255,7 @@ class Word extends DataClass implements Insertable<Word> {
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
+    required this.isFavorite,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -242,6 +271,7 @@ class Word extends DataClass implements Insertable<Word> {
     if (!nullToAbsent || deletedAt != null) {
       map['deleted_at'] = Variable<int>(deletedAt);
     }
+    map['is_favorite'] = Variable<bool>(isFavorite);
     return map;
   }
 
@@ -260,6 +290,7 @@ class Word extends DataClass implements Insertable<Word> {
           deletedAt == null && nullToAbsent
               ? const Value.absent()
               : Value(deletedAt),
+      isFavorite: Value(isFavorite),
     );
   }
 
@@ -276,6 +307,7 @@ class Word extends DataClass implements Insertable<Word> {
       createdAt: serializer.fromJson<int>(json['createdAt']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
       deletedAt: serializer.fromJson<int?>(json['deletedAt']),
+      isFavorite: serializer.fromJson<bool>(json['isFavorite']),
     );
   }
   @override
@@ -289,6 +321,7 @@ class Word extends DataClass implements Insertable<Word> {
       'createdAt': serializer.toJson<int>(createdAt),
       'updatedAt': serializer.toJson<int>(updatedAt),
       'deletedAt': serializer.toJson<int?>(deletedAt),
+      'isFavorite': serializer.toJson<bool>(isFavorite),
     };
   }
 
@@ -300,6 +333,7 @@ class Word extends DataClass implements Insertable<Word> {
     int? createdAt,
     int? updatedAt,
     Value<int?> deletedAt = const Value.absent(),
+    bool? isFavorite,
   }) => Word(
     id: id ?? this.id,
     wordText: wordText ?? this.wordText,
@@ -308,6 +342,7 @@ class Word extends DataClass implements Insertable<Word> {
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    isFavorite: isFavorite ?? this.isFavorite,
   );
   Word copyWithCompanion(WordsCompanion data) {
     return Word(
@@ -324,6 +359,8 @@ class Word extends DataClass implements Insertable<Word> {
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      isFavorite:
+          data.isFavorite.present ? data.isFavorite.value : this.isFavorite,
     );
   }
 
@@ -336,7 +373,8 @@ class Word extends DataClass implements Insertable<Word> {
           ..write('shortMeaning: $shortMeaning, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('deletedAt: $deletedAt')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('isFavorite: $isFavorite')
           ..write(')'))
         .toString();
   }
@@ -350,6 +388,7 @@ class Word extends DataClass implements Insertable<Word> {
     createdAt,
     updatedAt,
     deletedAt,
+    isFavorite,
   );
   @override
   bool operator ==(Object other) =>
@@ -361,7 +400,8 @@ class Word extends DataClass implements Insertable<Word> {
           other.shortMeaning == this.shortMeaning &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
-          other.deletedAt == this.deletedAt);
+          other.deletedAt == this.deletedAt &&
+          other.isFavorite == this.isFavorite);
 }
 
 class WordsCompanion extends UpdateCompanion<Word> {
@@ -372,6 +412,7 @@ class WordsCompanion extends UpdateCompanion<Word> {
   final Value<int> createdAt;
   final Value<int> updatedAt;
   final Value<int?> deletedAt;
+  final Value<bool> isFavorite;
   final Value<int> rowid;
   const WordsCompanion({
     this.id = const Value.absent(),
@@ -381,6 +422,7 @@ class WordsCompanion extends UpdateCompanion<Word> {
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
+    this.isFavorite = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   WordsCompanion.insert({
@@ -391,6 +433,7 @@ class WordsCompanion extends UpdateCompanion<Word> {
     required int createdAt,
     required int updatedAt,
     this.deletedAt = const Value.absent(),
+    this.isFavorite = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        wordText = Value(wordText),
@@ -405,6 +448,7 @@ class WordsCompanion extends UpdateCompanion<Word> {
     Expression<int>? createdAt,
     Expression<int>? updatedAt,
     Expression<int>? deletedAt,
+    Expression<bool>? isFavorite,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -415,6 +459,7 @@ class WordsCompanion extends UpdateCompanion<Word> {
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
+      if (isFavorite != null) 'is_favorite': isFavorite,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -427,6 +472,7 @@ class WordsCompanion extends UpdateCompanion<Word> {
     Value<int>? createdAt,
     Value<int>? updatedAt,
     Value<int?>? deletedAt,
+    Value<bool>? isFavorite,
     Value<int>? rowid,
   }) {
     return WordsCompanion(
@@ -437,6 +483,7 @@ class WordsCompanion extends UpdateCompanion<Word> {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
+      isFavorite: isFavorite ?? this.isFavorite,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -465,6 +512,9 @@ class WordsCompanion extends UpdateCompanion<Word> {
     if (deletedAt.present) {
       map['deleted_at'] = Variable<int>(deletedAt.value);
     }
+    if (isFavorite.present) {
+      map['is_favorite'] = Variable<bool>(isFavorite.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -481,6 +531,7 @@ class WordsCompanion extends UpdateCompanion<Word> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
+          ..write('isFavorite: $isFavorite, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1173,6 +1224,7 @@ typedef $$WordsTableCreateCompanionBuilder =
       required int createdAt,
       required int updatedAt,
       Value<int?> deletedAt,
+      Value<bool> isFavorite,
       Value<int> rowid,
     });
 typedef $$WordsTableUpdateCompanionBuilder =
@@ -1184,6 +1236,7 @@ typedef $$WordsTableUpdateCompanionBuilder =
       Value<int> createdAt,
       Value<int> updatedAt,
       Value<int?> deletedAt,
+      Value<bool> isFavorite,
       Value<int> rowid,
     });
 
@@ -1250,6 +1303,11 @@ class $$WordsTableFilterComposer extends Composer<_$AppDatabase, $WordsTable> {
 
   ColumnFilters<int> get deletedAt => $composableBuilder(
     column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isFavorite => $composableBuilder(
+    column: $table.isFavorite,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1322,6 +1380,11 @@ class $$WordsTableOrderingComposer
     column: $table.deletedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get isFavorite => $composableBuilder(
+    column: $table.isFavorite,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$WordsTableAnnotationComposer
@@ -1357,6 +1420,11 @@ class $$WordsTableAnnotationComposer
 
   GeneratedColumn<int> get deletedAt =>
       $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isFavorite => $composableBuilder(
+    column: $table.isFavorite,
+    builder: (column) => column,
+  );
 
   Expression<T> wordMetadataRefs<T extends Object>(
     Expression<T> Function($$WordMetadataTableAnnotationComposer a) f,
@@ -1419,6 +1487,7 @@ class $$WordsTableTableManager
                 Value<int> createdAt = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
                 Value<int?> deletedAt = const Value.absent(),
+                Value<bool> isFavorite = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WordsCompanion(
                 id: id,
@@ -1428,6 +1497,7 @@ class $$WordsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
+                isFavorite: isFavorite,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -1439,6 +1509,7 @@ class $$WordsTableTableManager
                 required int createdAt,
                 required int updatedAt,
                 Value<int?> deletedAt = const Value.absent(),
+                Value<bool> isFavorite = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WordsCompanion.insert(
                 id: id,
@@ -1448,6 +1519,7 @@ class $$WordsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
+                isFavorite: isFavorite,
                 rowid: rowid,
               ),
           withReferenceMapper:

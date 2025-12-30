@@ -13,6 +13,7 @@ import '../../data/repositories/language_repository_impl.dart';
 import '../../domain/repositories/word_repository.dart';
 import '../../domain/repositories/language_repository.dart';
 import '../../data/ai/ai_dictionary_service.dart';
+import '../../domain/services/word_enrichment_service.dart';
 
 /// ---------------------------------------------------------------------------
 /// DATABASE
@@ -83,9 +84,12 @@ final activeLanguageProvider = FutureProvider((ref) async {
 /// WORD LIST
 /// ---------------------------------------------------------------------------
 
-final wordListProvider = FutureProvider((ref) async {
+final wordListProvider = FutureProvider<List<Word>>((ref) async {
   ref.watch(activeLanguageTriggerProvider);
-  return ref.watch(wordRepositoryProvider).listWords();
+  final favoritesOnly = ref.watch(favoritesOnlyProvider);
+  return ref.watch(wordRepositoryProvider).listWords(
+    favoritesOnly: favoritesOnly,
+  );
 });
 
 /// ---------------------------------------------------------------------------
@@ -94,7 +98,10 @@ final wordListProvider = FutureProvider((ref) async {
 
 final wordCountProvider = FutureProvider<int>((ref) async {
   ref.watch(activeLanguageTriggerProvider);
-  return ref.watch(wordRepositoryProvider).getWordCount();
+  final favoritesOnly = ref.watch(favoritesOnlyProvider);
+  return ref.watch(wordRepositoryProvider).getWordCount(
+    favoritesOnly: favoritesOnly,
+  );
 });
 
 /// ---------------------------------------------------------------------------
@@ -117,14 +124,19 @@ FutureProvider.family<List<String>, String>((ref, prefix) async {
 
 final wordSearchQueryProvider = StateProvider<String>((ref) => '');
 
-final wordSearchResultsProvider = FutureProvider((ref) async {
+final wordSearchResultsProvider = FutureProvider<List<Word>>((ref) async {
   ref.watch(activeLanguageTriggerProvider);
-
+  final favoritesOnly = ref.watch(favoritesOnlyProvider);
   final query = ref.watch(wordSearchQueryProvider).trim();
   if (query.isEmpty) return const <Word>[];
-
-  return ref.watch(wordRepositoryProvider).searchWords(query);
+  return ref.watch(wordRepositoryProvider).searchWords(
+    query,
+    favoritesOnly: favoritesOnly,
+  );
 });
+
+/// NEW: favourites filter state (HomeScreen toggles this)
+final favoritesOnlyProvider = StateProvider<bool>((ref) => false);
 
 
 /// ---------------------------------------------------------------------------
@@ -134,6 +146,15 @@ final aiDictionaryServiceProvider =
 Provider<AiDictionaryService>((ref) {
   //Inject properly later (env, secrets manager, etc.)
   return AiDictionaryService(
-    apiKey: 'YOUR_API_KEY_HERE',
+    apiKey: '',
+  );
+});
+
+
+final wordEnrichmentServiceProvider =
+Provider<WordEnrichmentService>((ref) {
+  return WordEnrichmentService(
+    aiService: ref.read(aiDictionaryServiceProvider),
+    metadataDao: ref.read(wordMetadataDaoProvider),
   );
 });

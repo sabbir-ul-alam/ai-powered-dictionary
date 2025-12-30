@@ -22,6 +22,8 @@ class WordEnrichmentService {
       languageName: languageName,
     );
 
+    print(result.toString());
+
     await metadataDao.upsertMetadataForWord(
       wordId: wordId,
       metadataJson: jsonEncode({

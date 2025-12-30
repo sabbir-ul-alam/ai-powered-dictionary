@@ -18,13 +18,27 @@ abstract class WordRepository {
   /// REAL SEARCH (NEW)
   /// -------------------------------------------------------------------------
   /// Contains search returning full Word objects (id included).
-  Future<List<Word>> searchWords(String query);
-
+  Future<List<Word>> searchWords(
+      String query, {
+        bool favoritesOnly = false,
+      });
   Future<void> deleteWord(String id);
 
-  Future<List<Word>> listWords();
+  Future<List<Word>> listWords({
+    bool favoritesOnly = false,
+  });
 
   Future<List<String>> suggestWords(String prefix);
 
-  Future<int> getWordCount();
+  Future<int> getWordCount({
+    bool favoritesOnly = false,
+  });
+
+  Future<void> setFavorite({
+    required String id,
+    required bool isFavorite,
+  });
+
 }
+
+

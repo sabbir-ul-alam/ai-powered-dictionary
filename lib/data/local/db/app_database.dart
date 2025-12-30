@@ -68,19 +68,28 @@ part 'app_database.g.dart';
     Words,
     Languages,
     WordMetadata,
-  ],
+  ]
+
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
+  // IMPORTANT: bump schemaVersion whenever you change schema
+  // If you already have schemaVersion = 1, bump to 2.
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (Migrator m) async {
       // Create all tables
       await m.createAll();
+      onUpgrade: (m, from, to) async {
+        // Upgrade path for adding isFavorite column
+        if (from < 2) {
+          await m.addColumn(words, words.isFavorite);
+        }
+      };
 
       // Seed languages AFTER tables are created
       await _seedLanguages();

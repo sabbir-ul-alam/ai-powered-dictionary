@@ -1,75 +1,112 @@
 import 'dart:convert';
-
 import 'package:http/http.dart' as http;
 
 /// ---------------------------------------------------------------------------
-/// AI DICTIONARY SERVICE (GEMINI)
+/// AI DICTIONARY SERVICE (DeepSeek – Direct API)
 /// ---------------------------------------------------------------------------
 ///
-/// Generates meaning + examples using Google Gemini.
-/// UI-agnostic and DB-agnostic.
+/// Uses DeepSeek's OpenAI-compatible Chat Completions API.
+/// Responsible ONLY for generating meaning + examples.
 ///
 class AiDictionaryService {
   final String apiKey;
-  final String endpoint;
+
+  /// DeepSeek base URL (OpenAI-compatible)
+  static const String _baseUrl = 'https://api.deepseek.com/v1';
+
+  /// Recommended model for dictionary usage
+  static const String _model = 'deepseek-chat';
 
   AiDictionaryService({
     required this.apiKey,
-    this.endpoint =
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
   });
 
   Future<AiWordMetadata> generate({
     required String word,
     required String languageName,
   }) async {
+    final uri = Uri.parse('$_baseUrl/chat/completions');
+
     final response = await http.post(
-      Uri.parse(endpoint),
+      uri,
       headers: {
+        'Authorization': 'Bearer $apiKey',
         'Content-Type': 'application/json',
-        'x-goog-api-key':apiKey
       },
       body: jsonEncode({
-        "contents": [
+        'model': _model,
+        'temperature': 1.3,
+        'messages': [
           {
-            "role": "user",
-            "parts": [
-              {
-                "text": "You are a dictionary assistant. Respond ONLY with valid JSON. Do not add explanations or markdown.Generate a simple dictionary meaning and 2 example sentences.Language:$languageName. Word: $word. Return JSON in this exact format:{\"meaning\": \"string\", \"examples\": [\"string\", \"string\"]"
-              }
-            ]
+            'role': 'system',
+            'content':
+            'You are a dictionary assistant. '
+                'You must respond with valid JSON only. '
+                'Do not include explanations or markdown.'
+          },
+          {
+            'role': 'user',
+            'content': '''
+Generate a simple dictionary meaning and 2 example sentences. Only the meaning should always be in English. Examples should always be in the same language as the word.
+
+Example Language: $languageName
+Meaning Language: English
+Word: "$word"
+
+Respond strictly in this JSON format:
+{
+  "meaning": "string",
+  "examples": ["string", "string"]
+}
+'''
           }
         ],
-        "generationConfig": {
-          "temperature": 0.3,
-          "maxOutputTokens": 1024
-        }
-      })
+      }),
     );
 
     if (response.statusCode != 200) {
       throw Exception(
-        'AI generation failed (${response.statusCode}): ${response.body}',
+        'DeepSeek API failed (${response.statusCode}): ${response.body}',
       );
     }
 
-    final decoded = jsonDecode(response.body);
-    print('########Decoded#####');
-    print(decoded);
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
 
-    // Gemini response format
-    final rawText = decoded['candidates'][0]['content']['parts'][0]['text'];
+    final content =
+    decoded['choices']?[0]?['message']?['content'];
 
-    // Defensive cleanup (Gemini sometimes adds whitespace)
-    final cleaned = rawText.trim();
+    if (content == null || content is! String) {
+      throw Exception('Invalid DeepSeek response format');
+    }
 
-    final parsed = jsonDecode(cleaned);
+    // Defensive JSON parsing (models sometimes add whitespace)
+    final parsedJson = _extractJson(content);
 
     return AiWordMetadata(
-      meaning: parsed['meaning'] as String,
+      meaning: parsedJson['meaning'] as String,
       examples:
-      (parsed['examples'] as List).whereType<String>().toList(),
+      (parsedJson['examples'] as List).whereType<String>().toList(),
     );
+  }
+
+  /// -------------------------------------------------------------------------
+  /// JSON EXTRACTION (ROBUST)
+  /// -------------------------------------------------------------------------
+  ///
+  /// Handles cases where model accidentally adds text before/after JSON.
+  ///
+  Map<String, dynamic> _extractJson(String content) {
+    try {
+      return jsonDecode(content) as Map<String, dynamic>;
+    } catch (_) {
+      final start = content.indexOf('{');
+      final end = content.lastIndexOf('}');
+      if (start == -1 || end == -1) {
+        throw Exception('No JSON object found in AI response');
+      }
+      final jsonString = content.substring(start, end + 1);
+      return jsonDecode(jsonString) as Map<String, dynamic>;
+    }
   }
 }
 

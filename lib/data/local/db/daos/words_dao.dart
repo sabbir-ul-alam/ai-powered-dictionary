@@ -49,15 +49,23 @@ class WordsDao extends DatabaseAccessor<AppDatabase> with _$WordsDaoMixin {
 
   Future<List<Word>> listWords(
       String languageCode, {
+        bool favoritesOnly = false,
         int limit = 200,
         int offset = 0,
-      }) =>
-      (select(words)
-        ..where((w) =>
-        w.languageCode.equals(languageCode) & w.deletedAt.isNull())
-        ..orderBy([(w) => OrderingTerm.desc(w.updatedAt)])
-        ..limit(limit, offset: offset))
-          .get();
+      }) {
+    final query = select(words)
+      ..where((w) =>
+      w.languageCode.equals(languageCode) & w.deletedAt.isNull());
+    if (favoritesOnly) {
+      query.where((w) => w.isFavorite.equals(true));
+    }
+    query
+    ..orderBy([(w) =>
+        OrderingTerm.desc(w.updatedAt)
+    ])
+    ..limit(limit, offset: offset);
+    return query.get();
+  }
 
   /// Prefix suggestions for AddWordScreen
   Future<List<String>> suggestWords(
@@ -86,6 +94,8 @@ class WordsDao extends DatabaseAccessor<AppDatabase> with _$WordsDaoMixin {
       String languageCode,
       String query, {
         int limit = 200,
+        bool favoritesOnly = false,
+
       }) {
     final q = query.trim();
 
@@ -96,22 +106,49 @@ class WordsDao extends DatabaseAccessor<AppDatabase> with _$WordsDaoMixin {
 
     final pattern = '%$q%';
 
-    return (select(words)
+    final queryBuilder = select(words)
       ..where((w) =>
       w.languageCode.equals(languageCode) &
       w.deletedAt.isNull() &
-      w.wordText.like(pattern))
+      w.wordText.like(pattern));
+
+    if (favoritesOnly) {
+      queryBuilder.where((w) => w.isFavorite.equals(true));
+    }
+    queryBuilder
       ..orderBy([(w) => OrderingTerm.asc(w.wordText)])
-      ..limit(limit))
-        .get();
+      ..limit(limit);
+
+    return queryBuilder.get();
   }
 
-  Future<int> countWords(String languageCode) async {
+  Future<int> countWords(
+      String languageCode,
+      {bool favoritesOnly = false,})
+  async {
     // For large data sets, prefer a COUNT(*) query. This is fine for Phase 1.
-    final result = await (select(words)
+    final query = await select(words)
       ..where((w) =>
-      w.languageCode.equals(languageCode) & w.deletedAt.isNull()))
-        .get();
-    return result.length;
+      w.languageCode.equals(languageCode) & w.deletedAt.isNull());
+
+    if (favoritesOnly) {
+      query.where((w) => w.isFavorite.equals(true));
+    }
+
+    final rows = await query.get();
+    return rows.length;
+  }
+
+  Future<void> setFavorite({
+    required String id,
+    required bool isFavorite,
+  }) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await (update(words)..where((w) => w.id.equals(id))).write(
+      WordsCompanion(
+        isFavorite: Value(isFavorite),
+        updatedAt: Value(now),
+      ),
+    );
   }
 }

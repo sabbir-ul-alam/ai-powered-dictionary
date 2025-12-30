@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../state/providers.dart';
+import '../home/home_screen.dart';
 
 class LanguageSelectionScreen extends ConsumerStatefulWidget {
   const LanguageSelectionScreen({super.key});
@@ -97,7 +98,7 @@ class _LanguageSelectionScreenState
                         ref,
                       );
                     },
-                    child: const Text('Continue'),
+                    child: const Text('Save'),
                   ),
                 ),
               ],
@@ -112,13 +113,13 @@ class _LanguageSelectionScreenState
       BuildContext context,
       WidgetRef ref,
       ) async {
-    final lang = _selectedLanguage;
-    if (lang == null) return;
+    // final lang = _selectedLanguage;
+    if (_selectedLanguage == null) return;
 
     // Persist active language
     await ref
         .read(languageRepositoryProvider)
-        .setActiveLanguage(lang);
+        .setActiveLanguage(_selectedLanguage!);
 
     // Trigger reactive refresh
     ref.read(activeLanguageTriggerProvider.notifier).state++;

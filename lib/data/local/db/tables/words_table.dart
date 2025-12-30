@@ -21,6 +21,10 @@ class Words extends Table {
   IntColumn get deletedAt =>
       integer().named('deleted_at').nullable()();
 
+  // NEW: favourite flag
+  BoolColumn get isFavorite =>
+      boolean().withDefault(const Constant(false))();
+
   @override
   Set<Column> get primaryKey => {id};
 

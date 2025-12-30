@@ -30,6 +30,8 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
   bool _isEditing = false;
   bool _isSaving = false;
   bool _isGenerating = false;
+  late bool _isFavorite;
+
 
   @override
   void initState() {
@@ -38,6 +40,8 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
     _wordController = TextEditingController(text: widget.word.wordText);
     _meaningController = TextEditingController();
     _examplesController = TextEditingController();
+    _isFavorite = widget.word.isFavorite;
+
   }
 
   @override
@@ -55,7 +59,14 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Word Details'),
-        actions: _buildActions(context),
+        actions: [
+          IconButton(
+            tooltip: 'Favourite',
+            icon: Icon(_isFavorite  ? Icons.star : Icons.star_border),
+            onPressed: _toggleFavorite,
+          ),
+          ..._buildActions(context),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(24),
@@ -127,6 +138,23 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
         ),
       ),
     );
+  }
+
+  /// Toggle favourite (UI + DB)
+  Future<void> _toggleFavorite() async {
+    final newValue = !_isFavorite;
+
+    setState(() {
+      _isFavorite = newValue;
+    });
+
+    await ref.read(wordRepositoryProvider).setFavorite(
+      id: widget.word.id,
+      isFavorite: newValue,
+    );
+
+    // Refresh home lists
+    ref.read(activeLanguageTriggerProvider.notifier).state++;
   }
 
   /// Build Meaning + Examples UI (works for both view and edit mode)
@@ -289,6 +317,7 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
         wordText: _wordController.text.trim(),
         languageCode: widget.word.languageCode,
         shortMeaning: widget.word.shortMeaning,
+        isFavorite: _isFavorite,
         createdAt: widget.word.createdAt,
         updatedAt: DateTime.now().millisecondsSinceEpoch,
         deletedAt: widget.word.deletedAt,
