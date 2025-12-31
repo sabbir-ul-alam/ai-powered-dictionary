@@ -128,7 +128,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               _HeaderBar(activeLanguageAsync: activeLanguageAsync),
               const SizedBox(height: 20),
 
-
               /// ---------------------------------------------------------------
               /// SEARCH BAR
               /// ---------------------------------------------------------------
@@ -138,29 +137,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
 
-              child: TextField(
-
-                textAlignVertical: TextAlignVertical(y: .5),
-                controller: _searchController,
-                onChanged: _onSearchChanged,
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  hintText: 'Search words',
-                  prefixIcon: const Icon(Icons.search,),
-                  suffixIcon:
-                  _searchController.text.isEmpty
-                      ? null
-                      : IconButton(
-                    tooltip: 'Clear',
-                    icon: const Icon(Icons.close),
-                    onPressed: _clearSearch,
+                child: TextField(
+                  textAlignVertical: TextAlignVertical(y: .5),
+                  controller: _searchController,
+                  onChanged: _onSearchChanged,
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    hintText: 'Search words',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon:
+                        _searchController.text.isEmpty
+                            ? null
+                            : IconButton(
+                              tooltip: 'Clear',
+                              icon: const Icon(Icons.close),
+                              onPressed: _clearSearch,
+                            ),
                   ),
                 ),
               ),
-              ),
 
               const SizedBox(height: 16),
-
 
               /// ---------------------------------------------------------------
               /// WORD COUNT (total for active language)
@@ -183,18 +180,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Row(
                 children: [
                   ChoiceChip(
+                    shape: RoundedSuperellipseBorder(
+                        side: BorderSide(
+                            color: Colors.transparent
+                        ),
+                        borderRadius: BorderRadius.circular(30)),
                     showCheckmark: false,
-                    label: const Text('All'),
-                    selected: !favoritesOnly,
+                    selectedColor: primaryColor,
+                    backgroundColor: Colors.grey[200],
+                    label:  Text('All',
+                        style:TextStyle(
+                          color: !favoritesOnly ? Colors.white : textGrey,
+                        )),                    selected: !favoritesOnly,
                     onSelected: (_) {
                       ref.read(favoritesOnlyProvider.notifier).state = false;
                       ref.read(activeLanguageTriggerProvider.notifier).state++;
                     },
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
                   ChoiceChip(
+                    shape: RoundedSuperellipseBorder(
+                      side: BorderSide(
+                        color: Colors.transparent
+                      ),
+                        borderRadius: BorderRadius.circular(30)),
+                    backgroundColor: Colors.grey[200],
+                    selectedColor: primaryColor,
                     showCheckmark: false,
-                    label: const Text('Favourites'),
+                    label:  Text('Starred',
+                      style:TextStyle(
+                        color: favoritesOnly ? Colors.white : textGrey,
+                      )),
                     selected: favoritesOnly,
                     onSelected: (_) {
                       ref.read(favoritesOnlyProvider.notifier).state = true;
@@ -230,7 +246,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           const Center(child: Text('Failed to load words')),
                   data: (words) {
                     if (words.isEmpty) {
-                      return _SearchEmptyState(query: searchQuery.trim());
+                      if (isSearching) {
+                        return _SearchEmptyState(query: searchQuery.trim());
+                      }
+                      return const _EmptyState();
                     }
                     return ListView.separated(
                       itemCount: words.length,
@@ -290,7 +309,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 }
-
 
 /// ---------------------------------------------------------------------------
 /// WORD LIST ITEM
