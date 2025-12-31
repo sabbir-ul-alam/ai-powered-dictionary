@@ -219,7 +219,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 error: (_, __) => const Center(child: Text('Failed to load words')),
                 data: (words) {
                   if (words.isEmpty) {
+                    if (isSearching){
                     return _SearchEmptyState(query: searchQuery.trim());
+                    }
+                    return const _EmptyState();
                   }
                   return ListView.separated(
                     itemCount: words.length,
