@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../state/providers.dart';
+import '../flashcards/flashcard_session_screen.dart';
 import '../language/language_selection_screen.dart';
 import '../word/add_word_screen.dart';
 import '../word/word_detail_screen.dart';
@@ -73,6 +74,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               );
             },
           ),
+          Row(
+            children: [
+              ElevatedButton.icon(
+                icon: const Icon(Icons.style),
+                label: const Text('Flashcards'),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                      const FlashcardSessionScreen(
+                        favoritesOnly: false,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.star),
+                label: const Text('Favourites'),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                      const FlashcardSessionScreen(
+                        favoritesOnly: true,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+
         ],
       ),
 
