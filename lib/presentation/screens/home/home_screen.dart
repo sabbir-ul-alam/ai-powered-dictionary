@@ -3,11 +3,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../data/local/db/app_database.dart';
 import '../../state/providers.dart';
 import '../flashcards/flashcard_session_screen.dart';
 import '../language/language_selection_screen.dart';
 import '../word/add_word_screen.dart';
 import '../word/word_detail_screen.dart';
+
+const primaryColor = Color(0xFF3B2EFF);
+const lightGrey = Color(0xCFDFEDEA);
+const textGrey = Color(0xFF6B7280);
+const backgroundColor = Color(0xFFF7F7F7);
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -51,235 +57,296 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final isSearching = searchQuery.trim().isNotEmpty;
 
     // Use either full list or search results depending on query
-    final wordsAsync = isSearching
-        ? ref.watch(wordSearchResultsProvider)
-        : ref.watch(wordListProvider);
+    final wordsAsync =
+        isSearching
+            ? ref.watch(wordSearchResultsProvider)
+            : ref.watch(wordListProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: activeLanguageAsync.when(
-          data: (language) => Text(language?.displayName ?? 'Dictionary'),
-          loading: () => const Text('Loading…'),
-          error: (_, __) => const Text('Dictionary'),
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Change language',
-            icon: const Icon(Icons.language),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const LanguageSelectionScreen(),
-                ),
-              );
-            },
-          ),
-          Row(
-            children: [
-              ElevatedButton.icon(
-                icon: const Icon(Icons.style),
-                label: const Text('Flashcards'),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) =>
-                      const FlashcardSessionScreen(
-                        favoritesOnly: false,
-                      ),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.star),
-                label: const Text('Favourites'),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) =>
-                      const FlashcardSessionScreen(
-                        favoritesOnly: true,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
+      backgroundColor: backgroundColor,
 
-        ],
-      ),
+      //     // Row(
+      //     //   children: [
+      //     //     ElevatedButton.icon(
+      //     //       icon: const Icon(Icons.style),
+      //     //       label: const Text('Flashcards'),
+      //     //       onPressed: () {
+      //     //         Navigator.of(context).push(
+      //     //           MaterialPageRoute(
+      //     //             builder: (_) =>
+      //     //             const FlashcardSessionScreen(
+      //     //               favoritesOnly: false,
+      //     //             ),
+      //     //           ),
+      //     //         );
+      //     //       },
+      //     //     ),
+      //     //     const SizedBox(width: 8),
+      //     //     ElevatedButton.icon(
+      //     //       icon: const Icon(Icons.star),
+      //     //       label: const Text('Favourites'),
+      //     //       onPressed: () {
+      //     //         Navigator.of(context).push(
+      //     //           MaterialPageRoute(
+      //     //             builder: (_) =>
+      //     //             const FlashcardSessionScreen(
+      //     //               favoritesOnly: true,
+      //     //             ),
+      //     //           ),
+      //     //         );
+      //     //       },
+      //     //     ),
+      //     //   ],
+      //     // ),
+      //
+      //   ],
+      // ),
 
       /// ---------------------------------------------------------------------
       /// ADD WORD
       /// ---------------------------------------------------------------------
       floatingActionButton: FloatingActionButton(
+        backgroundColor: primaryColor,
         onPressed: () async {
-          await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => const AddWordScreen(),
-            ),
-          );
+          await Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const AddWordScreen()));
 
           // Refresh list/count (and any search results if active)
           ref.read(activeLanguageTriggerProvider.notifier).state++;
         },
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, size: 28, color: backgroundColor),
       ),
 
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// ---------------------------------------------------------------
-            /// SEARCH BAR
-            /// ---------------------------------------------------------------
-            TextField(
-              controller: _searchController,
-              onChanged: _onSearchChanged,
-              decoration: InputDecoration(
-                hintText: 'Search words',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isEmpty
-                    ? null
-                    : IconButton(
-                  tooltip: 'Clear',
-                  icon: const Icon(Icons.close),
-                  onPressed: _clearSearch,
-                ),
-                border: const OutlineInputBorder(),
-              ),
-            ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 12),
+              _HeaderBar(activeLanguageAsync: activeLanguageAsync),
+              const SizedBox(height: 20),
 
-            const SizedBox(height: 12),
 
-            /// ---------------------------------------------------------------
-            /// WORD COUNT (total for active language)
-            /// ---------------------------------------------------------------
-            // wordCountAsync.when(
-            //   data: (count) => Text(
-            //     '$count words',
-            //     style: Theme.of(context).textTheme.titleMedium,
-            //   ),
-            //   loading: () => const SizedBox(
-            //     height: 20,
-            //     child: LinearProgressIndicator(),
-            //   ),
-            //   error: (_, __) => const Text('—'),
-            // ),
-            //
-            // const SizedBox(height: 12),
-            // const Divider(),
-            /// All / Favourites toggle
-            Row(
-              children: [
-                ChoiceChip(
-                  showCheckmark: false,
-                  label: const Text('All'),
-                  selected: !favoritesOnly,
-                  onSelected: (_) {
-                    ref.read(favoritesOnlyProvider.notifier).state = false;
-                    ref.read(activeLanguageTriggerProvider.notifier).state++;
-                  },
+              /// ---------------------------------------------------------------
+              /// SEARCH BAR
+              /// ---------------------------------------------------------------
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                const SizedBox(width: 8),
-                ChoiceChip(
-                  showCheckmark: false,
-                  label: const Text('Favourites'),
-                  selected: favoritesOnly,
-                  onSelected: (_) {
-                    ref.read(favoritesOnlyProvider.notifier).state = true;
-                    ref.read(activeLanguageTriggerProvider.notifier).state++;
-                  },
-                ),
-                const Spacer(),
-                wordCountAsync.when(
-                  data: (c) => Text('$c'),
-                  loading: () => const SizedBox(
-                    height: 16,
-                    width: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+
+              child: TextField(
+
+                textAlignVertical: TextAlignVertical(y: .5),
+                controller: _searchController,
+                onChanged: _onSearchChanged,
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  hintText: 'Search words',
+                  prefixIcon: const Icon(Icons.search,),
+                  suffixIcon:
+                  _searchController.text.isEmpty
+                      ? null
+                      : IconButton(
+                    tooltip: 'Clear',
+                    icon: const Icon(Icons.close),
+                    onPressed: _clearSearch,
                   ),
-                  error: (_, __) => const Text('—'),
                 ),
-              ],
-            ),
+              ),
+              ),
 
-            const SizedBox(height: 12),
-            const Divider(),
+              const SizedBox(height: 16),
 
-            /// ---------------------------------------------------------------
-            /// WORD LIST OR SEARCH RESULTS
-            /// ---------------------------------------------------------------
-            Expanded(
-              child: wordsAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (_, __) => const Center(child: Text('Failed to load words')),
-                data: (words) {
-                  if (words.isEmpty) {
-                    return _SearchEmptyState(query: searchQuery.trim());
-                  }
-                  return ListView.separated(
-                    itemCount: words.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final word = words[index];
-                      return _WordListItem(
-                        text: word.wordText,
-                        isFavorite: word.isFavorite,
-                        onTap: () async {
-                          await Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => WordDetailScreen(word: word),
-                            ),
-                          );
-                          if (!mounted) return;
-                          ref
-                              .read(activeLanguageTriggerProvider.notifier)
-                              .state++;
-                        },
-                        onToggleFavorite: () async {
-                          await ref.read(wordRepositoryProvider).setFavorite(
-                            id: word.id,
-                            isFavorite: !word.isFavorite,
-                          );
-                          ref
-                              .read(activeLanguageTriggerProvider.notifier)
-                              .state++;
-                        },
 
-                        // onTap: () {
-                        //   // We cannot open detail reliably from just the text,
-                        //   // because we need wordId.
-                        //   //
-                        //   // Best practice: implement repository.searchWords()
-                        //   // that returns Word objects including id.
-                        //   //
-                        //   // For now, keep it simple: fill search box with exact suggestion.
-                        //   _searchController.text = word.wordText;
-                        //   _searchController.selection = TextSelection.fromPosition(
-                        //     TextPosition(offset: _searchController.text.length),
-                        //   );
-                        //   ref.read(wordSearchQueryProvider.notifier).state = word.wordText;
-                        // },
-                      );
+              /// ---------------------------------------------------------------
+              /// WORD COUNT (total for active language)
+              /// ---------------------------------------------------------------
+              // wordCountAsync.when(
+              //   data: (count) => Text(
+              //     '$count words',
+              //     style: Theme.of(context).textTheme.titleMedium,
+              //   ),
+              //   loading: () => const SizedBox(
+              //     height: 20,
+              //     child: LinearProgressIndicator(),
+              //   ),
+              //   error: (_, __) => const Text('—'),
+              // ),
+              //
+              // const SizedBox(height: 12),
+              // const Divider(),
+              /// All / Favourites toggle
+              Row(
+                children: [
+                  ChoiceChip(
+                    showCheckmark: false,
+                    label: const Text('All'),
+                    selected: !favoritesOnly,
+                    onSelected: (_) {
+                      ref.read(favoritesOnlyProvider.notifier).state = false;
+                      ref.read(activeLanguageTriggerProvider.notifier).state++;
                     },
-                  );
-                }
-            ),
-            ),
-          ],
+                  ),
+                  const SizedBox(width: 8),
+                  ChoiceChip(
+                    showCheckmark: false,
+                    label: const Text('Favourites'),
+                    selected: favoritesOnly,
+                    onSelected: (_) {
+                      ref.read(favoritesOnlyProvider.notifier).state = true;
+                      ref.read(activeLanguageTriggerProvider.notifier).state++;
+                    },
+                  ),
+                  const Spacer(),
+                  wordCountAsync.when(
+                    data: (c) => Text('$c'),
+                    loading:
+                        () => const SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                    error: (_, __) => const Text('—'),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+              const Divider(),
+
+              /// ---------------------------------------------------------------
+              /// WORD LIST OR SEARCH RESULTS
+              /// ---------------------------------------------------------------
+              Expanded(
+                child: wordsAsync.when(
+                  loading:
+                      () => const Center(child: CircularProgressIndicator()),
+                  error:
+                      (_, __) =>
+                          const Center(child: Text('Failed to load words')),
+                  data: (words) {
+                    if (words.isEmpty) {
+                      return _SearchEmptyState(query: searchQuery.trim());
+                    }
+                    return ListView.separated(
+                      itemCount: words.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final word = words[index];
+                        return _WordListItem(
+                          text: word.wordText,
+                          isFavorite: word.isFavorite,
+                          onTap: () async {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => WordDetailScreen(word: word),
+                              ),
+                            );
+                            if (!mounted) return;
+                            ref
+                                .read(activeLanguageTriggerProvider.notifier)
+                                .state++;
+                          },
+                          onToggleFavorite: () async {
+                            await ref
+                                .read(wordRepositoryProvider)
+                                .setFavorite(
+                                  id: word.id,
+                                  isFavorite: !word.isFavorite,
+                                );
+                            ref
+                                .read(activeLanguageTriggerProvider.notifier)
+                                .state++;
+                          },
+
+                          // onTap: () {
+                          //   // We cannot open detail reliably from just the text,
+                          //   // because we need wordId.
+                          //   //
+                          //   // Best practice: implement repository.searchWords()
+                          //   // that returns Word objects including id.
+                          //   //
+                          //   // For now, keep it simple: fill search box with exact suggestion.
+                          //   _searchController.text = word.wordText;
+                          //   _searchController.selection = TextSelection.fromPosition(
+                          //     TextPosition(offset: _searchController.text.length),
+                          //   );
+                          //   ref.read(wordSearchQueryProvider.notifier).state = word.wordText;
+                          // },
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
+
 /// ---------------------------------------------------------------------------
 /// WORD LIST ITEM
 /// ---------------------------------------------------------------------------
+
+class _HeaderBar extends StatelessWidget {
+  final AsyncValue<Language?> activeLanguageAsync;
+
+  const _HeaderBar({required this.activeLanguageAsync});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        GestureDetector(
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const LanguageSelectionScreen(),
+              ),
+            );
+          },
+          child: Row(
+            children: [
+              // activeLanguageAsync.when(
+              //         data: (language) => Text(language!.displayName),
+              //         loading: () => const Text('Loading…'),
+              //         error: (_, __) => const Text('Dictionary'),
+              //       ),
+              Text(
+                activeLanguageAsync.when(
+                  data: (language) => language!.displayName,
+                  loading: () => 'Loading…',
+                  error: (_, __) => 'Dictionary',
+                ),
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(width: 6),
+              const Icon(Icons.keyboard_arrow_down),
+            ],
+          ),
+        ),
+        const Spacer(),
+        IconButton(
+          icon: const Icon(Icons.settings_outlined),
+          onPressed: () {
+            // existing settings logic
+          },
+        ),
+      ],
+    );
+  }
+}
 
 class _WordListItem extends StatelessWidget {
   final String text;
@@ -287,13 +354,12 @@ class _WordListItem extends StatelessWidget {
   final bool isFavorite;
   final VoidCallback onToggleFavorite;
 
-
-
   const _WordListItem({
     required this.text,
     required this.isFavorite,
     required this.onTap,
-    required this.onToggleFavorite,  });
+    required this.onToggleFavorite,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -304,17 +370,11 @@ class _WordListItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            vertical: 16,
-            horizontal: 16,
-          ),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
           child: Row(
             children: [
               Expanded(
-                child: Text(
-                  text,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
+                child: Text(text, style: Theme.of(context).textTheme.bodyLarge),
               ),
               IconButton(
                 tooltip: 'Favourite',
@@ -342,18 +402,11 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: const [
-          Icon(
-            Icons.menu_book_outlined,
-            size: 64,
-            color: Colors.grey,
-          ),
+          Icon(Icons.menu_book_outlined, size: 64, color: Colors.grey),
           SizedBox(height: 16),
           Text(
             'No words yet',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
           ),
           SizedBox(height: 8),
           Text(

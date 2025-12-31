@@ -146,7 +146,7 @@ class _LanguageSelectionScreenState
                          await _onContinuePressed(context,ref);
                        },
                        style: ElevatedButton.styleFrom(
-                         backgroundColor: Colors.blue,
+                         backgroundColor: Color(0xFF3B2EFF),
                          disabledBackgroundColor:
                          const Color(0xFFD1D1D5),
                          shape: RoundedRectangleBorder(
