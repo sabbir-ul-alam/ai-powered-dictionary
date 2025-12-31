@@ -56,9 +56,11 @@ class WordRepositoryImpl implements WordRepository {
   }
 
   @override
-  Future<int> getWordCount({bool favoritesOnly = false}) async {
+  Future<int> getWordCount(
+      String? query,
+      {bool favoritesOnly = false}) async {
     final language = await _requireActiveLanguage();
-    return wordsDao.countWords(language, favoritesOnly: favoritesOnly);
+    return wordsDao.countWords(query, language,favoritesOnly: favoritesOnly);
   }
 
   @override

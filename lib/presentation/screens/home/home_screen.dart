@@ -23,13 +23,13 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  final _searchController = TextEditingController();
+  var _searchController = TextEditingController();
   Timer? _debounce;
 
   @override
   void dispose() {
     _debounce?.cancel();
-    _searchController.dispose();
+    // _searchController.dispose();
     super.dispose();
   }
 
@@ -50,10 +50,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final activeLanguageAsync = ref.watch(activeLanguageProvider);
-    final wordCountAsync = ref.watch(wordCountProvider);
+    final allWordCountAsync = ref.watch(wordCountProvider);
+    final starredWordCountAsync = ref.watch(starredWordCountProvider);
+
     final favoritesOnly = ref.watch(favoritesOnlyProvider);
     // Decide whether we are in "search mode"
     final searchQuery = ref.watch(wordSearchQueryProvider);
+    _searchController.text = searchQuery;
     final isSearching = searchQuery.trim().isNotEmpty;
 
     // Use either full list or search results depending on query
@@ -61,6 +64,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         isSearching
             ? ref.watch(wordSearchResultsProvider)
             : ref.watch(wordListProvider);
+
+    // int? all = wordCountAsync.value;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -157,24 +162,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
 
-              const SizedBox(height: 16),
 
-              /// ---------------------------------------------------------------
-              /// WORD COUNT (total for active language)
-              /// ---------------------------------------------------------------
-              // wordCountAsync.when(
-              //   data: (count) => Text(
-              //     '$count words',
-              //     style: Theme.of(context).textTheme.titleMedium,
-              //   ),
-              //   loading: () => const SizedBox(
-              //     height: 20,
-              //     child: LinearProgressIndicator(),
-              //   ),
-              //   error: (_, __) => const Text('—'),
-              // ),
-              //
-              // const SizedBox(height: 12),
+              const SizedBox(height: 12),
               // const Divider(),
               /// All / Favourites toggle
               Row(
@@ -188,7 +177,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     showCheckmark: false,
                     selectedColor: primaryColor,
                     backgroundColor: Colors.grey[200],
-                    label:  Text('All',
+                    label:  Text('All (${allWordCountAsync.value})',
                         style:TextStyle(
                           color: !favoritesOnly ? Colors.white : textGrey,
                         )),                    selected: !favoritesOnly,
@@ -197,7 +186,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ref.read(activeLanguageTriggerProvider.notifier).state++;
                     },
                   ),
+
+
                   const SizedBox(width: 12),
+
+
                   ChoiceChip(
                     shape: RoundedSuperellipseBorder(
                       side: BorderSide(
@@ -207,7 +200,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     backgroundColor: Colors.grey[200],
                     selectedColor: primaryColor,
                     showCheckmark: false,
-                    label:  Text('Starred',
+                    label:  Text('Starred (${starredWordCountAsync.value})',
                       style:TextStyle(
                         color: favoritesOnly ? Colors.white : textGrey,
                       )),
@@ -216,18 +209,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ref.read(favoritesOnlyProvider.notifier).state = true;
                       ref.read(activeLanguageTriggerProvider.notifier).state++;
                     },
-                  ),
+                  )
+
+                  ,
                   const Spacer(),
-                  wordCountAsync.when(
-                    data: (c) => Text('$c'),
-                    loading:
-                        () => const SizedBox(
-                          height: 16,
-                          width: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                    error: (_, __) => const Text('—'),
-                  ),
+                  // wordCountAsync.when(
+                  //   data: (c) => Text('$c'),
+                  //   loading:
+                  //       () => const SizedBox(
+                  //         height: 16,
+                  //         width: 16,
+                  //         child: CircularProgressIndicator(strokeWidth: 2),
+                  //       ),
+                  //   error: (_, __) => const Text('—'),
+                  // ),
+
+
+
+
+
+
+
                 ],
               ),
 

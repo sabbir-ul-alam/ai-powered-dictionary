@@ -98,12 +98,35 @@ final wordListProvider = FutureProvider<List<Word>>((ref) async {
 
 final wordCountProvider = FutureProvider<int>((ref) async {
   ref.watch(activeLanguageTriggerProvider);
-  final favoritesOnly = ref.watch(favoritesOnlyProvider);
+  final query = ref.watch(wordSearchQueryProvider).trim();
+  if (query.isEmpty) {
+    return ref.watch(wordRepositoryProvider).getWordCount(null
+      // favoritesOnly: true,
+    );
+  }
+    return ref.watch(wordRepositoryProvider).getWordCount(
+      query,
+      // favoritesOnly: true,
+    );
+  });
+
+final starredWordCountProvider = FutureProvider<int>((ref) async {
+  ref.watch(activeLanguageTriggerProvider);
+  // final favoritesOnly = ref.watch(favoritesOnlyProvider);
+  final query = ref.watch(wordSearchQueryProvider).trim();
+  if (query.isEmpty) {
+    return ref.watch(wordRepositoryProvider).getWordCount(
+      null,
+      favoritesOnly: true,
+    );
+
+  }
+
   return ref.watch(wordRepositoryProvider).getWordCount(
-    favoritesOnly: favoritesOnly,
+    query,
+    favoritesOnly: true,
   );
 });
-
 /// ---------------------------------------------------------------------------
 /// WORD SUGGESTIONS (prefix; Add Word)
 /// ---------------------------------------------------------------------------
