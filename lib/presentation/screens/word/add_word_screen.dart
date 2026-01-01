@@ -160,40 +160,10 @@ class _AddWordScreenState extends ConsumerState<AddWordScreen> {
     });
 
     try {
-      final wordId = await ref.read(wordRepositoryProvider).addWord(
+      final word = await ref.read(wordRepositoryProvider).addWord(
         text: _controller.text.trim(),
       );
 
-
-
-// Auto-generate metadata (non-blocking)
-//       Future.microtask(() async {
-//         try {
-//           final language =
-//           await ref.read(languageRepositoryProvider).getActiveLanguage();
-//
-//           final aiResult =
-//           await ref.read(aiDictionaryServiceProvider).generate(
-//             word: _controller.text,
-//             languageName: language!.displayName,
-//           );
-//
-//           await ref
-//               .read(wordMetadataDaoProvider)
-//               .upsertMetadataForWord(
-//             wordId: wordId,
-//             metadataJson: jsonEncode({
-//               'meaning': aiResult.meaning,
-//               'examples': aiResult.examples,
-//             }),
-//           );
-//
-//           ref.read(activeLanguageTriggerProvider.notifier).state++;
-//         } catch (e) {
-//           debugPrint('AI auto-generate failed: $e');
-//           // Silent failure: user can regenerate later
-//         }
-//       });
 
       final language =
       await ref.read(languageRepositoryProvider).getActiveLanguage();
@@ -201,12 +171,14 @@ class _AddWordScreenState extends ConsumerState<AddWordScreen> {
 // Fire-and-forget, but NOT tied to widget lifecycle
       unawaited(
         ref.read(wordEnrichmentServiceProvider).autoGenerateMetadata(
-          wordId: wordId,
-          wordText: _controller.text.trim(),
+          word:word,
           languageName: language!.displayName,
         ),
       );
-
+      // _controller.clear();
+      // setState(() {
+      //   _currentInput = '';
+      // });
 
       // Force refresh of Home providers
       ref.read(activeLanguageTriggerProvider.notifier).state++;

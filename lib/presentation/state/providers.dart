@@ -87,6 +87,7 @@ final activeLanguageProvider = FutureProvider((ref) async {
 final wordListProvider = FutureProvider<List<Word>>((ref) async {
   ref.watch(activeLanguageTriggerProvider);
   final favoritesOnly = ref.watch(favoritesOnlyProvider);
+  ref.watch(wordsStreamProvider);
   return ref.watch(wordRepositoryProvider).listWords(
     favoritesOnly: favoritesOnly,
   );
@@ -179,5 +180,13 @@ Provider<WordEnrichmentService>((ref) {
   return WordEnrichmentService(
     aiService: ref.read(aiDictionaryServiceProvider),
     metadataDao: ref.read(wordMetadataDaoProvider),
+    wordsDao: ref.read(wordsDaoProvider),
+
   );
+});
+
+
+final wordsStreamProvider = StreamProvider.autoDispose<List<Word>>((ref) {
+  final dao = ref.watch(wordsDaoProvider);
+  return dao.watchAllWords();
 });

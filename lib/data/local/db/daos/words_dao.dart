@@ -175,4 +175,9 @@ class WordsDao extends DatabaseAccessor<AppDatabase> with _$WordsDaoMixin {
       ),
     );
   }
+
+  Stream<List<Word>> watchAllWords() {
+    return select(words).watch();
+  }
+
 }

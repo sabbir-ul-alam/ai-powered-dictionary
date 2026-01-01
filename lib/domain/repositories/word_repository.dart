@@ -5,7 +5,7 @@ abstract class WordRepository {
   /// CREATE
   /// -------------------------------------------------------------------------
   /// Returns the generated wordId.
-  Future<String> addWord({
+  Future<Word> addWord({
     required String text,
     String? shortMeaning,
   });

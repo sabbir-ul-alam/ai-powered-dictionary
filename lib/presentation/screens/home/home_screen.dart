@@ -235,7 +235,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
 
               const SizedBox(height: 12),
-              const Divider(),
+              // const Divider(),
 
               /// ---------------------------------------------------------------
               /// WORD LIST OR SEARCH RESULTS
@@ -256,7 +256,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     }
                     return ListView.separated(
                       itemCount: words.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      separatorBuilder: (_, __) => const SizedBox(height: 1),
                       itemBuilder: (context, index) {
                         final word = words[index];
                         return _WordListItem(
@@ -390,16 +390,17 @@ class _WordListItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(18),
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.only(left: 15, right:15, top:  5, bottom: 15),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: Colors.black.withOpacity(0.09),
+              blurRadius: 4,
+              spreadRadius: .2,
+              offset: const Offset(1, 5),
             ),
           ],
         ),
@@ -412,7 +413,7 @@ class _WordListItem extends StatelessWidget {
                   child: Text(
                     text.toUpperCase(),
                     style: const TextStyle(
-                      fontSize: 20,
+                      fontSize: 16,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -426,7 +427,7 @@ class _WordListItem extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 6),
+            // const SizedBox(height: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
