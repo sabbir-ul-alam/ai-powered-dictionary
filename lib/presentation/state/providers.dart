@@ -87,6 +87,7 @@ final activeLanguageProvider = FutureProvider((ref) async {
 final wordListProvider = FutureProvider<List<Word>>((ref) async {
   ref.watch(activeLanguageTriggerProvider);
   final favoritesOnly = ref.watch(favoritesOnlyProvider);
+  ref.watch(wordsStreamProvider);
   return ref.watch(wordRepositoryProvider).listWords(
     favoritesOnly: favoritesOnly,
   );
@@ -98,12 +99,35 @@ final wordListProvider = FutureProvider<List<Word>>((ref) async {
 
 final wordCountProvider = FutureProvider<int>((ref) async {
   ref.watch(activeLanguageTriggerProvider);
-  final favoritesOnly = ref.watch(favoritesOnlyProvider);
+  final query = ref.watch(wordSearchQueryProvider).trim();
+  if (query.isEmpty) {
+    return ref.watch(wordRepositoryProvider).getWordCount(null
+      // favoritesOnly: true,
+    );
+  }
+    return ref.watch(wordRepositoryProvider).getWordCount(
+      query,
+      // favoritesOnly: true,
+    );
+  });
+
+final starredWordCountProvider = FutureProvider<int>((ref) async {
+  ref.watch(activeLanguageTriggerProvider);
+  // final favoritesOnly = ref.watch(favoritesOnlyProvider);
+  final query = ref.watch(wordSearchQueryProvider).trim();
+  if (query.isEmpty) {
+    return ref.watch(wordRepositoryProvider).getWordCount(
+      null,
+      favoritesOnly: true,
+    );
+
+  }
+
   return ref.watch(wordRepositoryProvider).getWordCount(
-    favoritesOnly: favoritesOnly,
+    query,
+    favoritesOnly: true,
   );
 });
-
 /// ---------------------------------------------------------------------------
 /// WORD SUGGESTIONS (prefix; Add Word)
 /// ---------------------------------------------------------------------------
@@ -156,5 +180,13 @@ Provider<WordEnrichmentService>((ref) {
   return WordEnrichmentService(
     aiService: ref.read(aiDictionaryServiceProvider),
     metadataDao: ref.read(wordMetadataDaoProvider),
+    wordsDao: ref.read(wordsDaoProvider),
+
   );
+});
+
+
+final wordsStreamProvider = StreamProvider.autoDispose<List<Word>>((ref) {
+  final dao = ref.watch(wordsDaoProvider);
+  return dao.watchAllWords();
 });

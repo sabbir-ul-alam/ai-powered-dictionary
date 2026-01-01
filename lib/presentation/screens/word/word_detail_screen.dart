@@ -316,7 +316,7 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
         id: widget.word.id,
         wordText: _wordController.text.trim(),
         languageCode: widget.word.languageCode,
-        shortMeaning: widget.word.shortMeaning,
+        shortMeaning: _meaningController.text,
         isFavorite: _isFavorite,
         createdAt: widget.word.createdAt,
         updatedAt: DateTime.now().millisecondsSinceEpoch,

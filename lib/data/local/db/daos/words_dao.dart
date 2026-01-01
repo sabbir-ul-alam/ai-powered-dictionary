@@ -122,22 +122,46 @@ class WordsDao extends DatabaseAccessor<AppDatabase> with _$WordsDaoMixin {
     return queryBuilder.get();
   }
 
+  // Future<int> countWords(
+  //     String? query,
+  //     String languageCode,
+  //     {bool favoritesOnly = false,})
+  // async {
+  //   // For large data sets, prefer a COUNT(*) query. This is fine for Phase 1.
+  //   final query = await select(words)
+  //     ..where((w) =>
+  //     w.languageCode.equals(languageCode) & w.deletedAt.isNull());
+  //
+  //   if (favoritesOnly) {
+  //     query.where((w) => w.isFavorite.equals(true));
+  //   }
+  //
+  //   final rows = await query.get();
+  //   return rows.length;
+  // }
   Future<int> countWords(
-      String languageCode,
-      {bool favoritesOnly = false,})
-  async {
-    // For large data sets, prefer a COUNT(*) query. This is fine for Phase 1.
-    final query = await select(words)
-      ..where((w) =>
-      w.languageCode.equals(languageCode) & w.deletedAt.isNull());
+      String? searchQuery,
+      String languageCode, {
+        bool favoritesOnly = false,
+      }) async {
+    final countExp = words.id.count();
+
+    final query = selectOnly(words)
+      ..addColumns([countExp])
+      ..where(words.languageCode.equals(languageCode) & words.deletedAt.isNull());
 
     if (favoritesOnly) {
-      query.where((w) => w.isFavorite.equals(true));
+      query.where(words.isFavorite.equals(true));
     }
 
-    final rows = await query.get();
-    return rows.length;
+    if (searchQuery != null && searchQuery.isNotEmpty) {
+      query.where(words.wordText.like('%$searchQuery%'));
+    }
+
+    final row = await query.getSingle();
+    return row.read(countExp) ?? 0;
   }
+
 
   Future<void> setFavorite({
     required String id,
@@ -151,4 +175,9 @@ class WordsDao extends DatabaseAccessor<AppDatabase> with _$WordsDaoMixin {
       ),
     );
   }
+
+  Stream<List<Word>> watchAllWords() {
+    return select(words).watch();
+  }
+
 }

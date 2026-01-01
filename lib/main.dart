@@ -1,3 +1,4 @@
+import 'package:apd/presentation/app_shell.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -60,7 +61,7 @@ class AppStartScreen extends ConsumerWidget {
       data: (language) {
         // If language is already selected, skip language selection
         if (language != null) {
-          return const HomeScreen();
+          return const AppShell();
         }
 
         // Otherwise, force user to select a language

@@ -22,13 +22,24 @@ class WordRepositoryImpl implements WordRepository {
   }
 
   @override
-  Future<String> addWord({
+  Future<Word> addWord({
     required String text,
     String? shortMeaning,
   }) async {
+
     final language = await _requireActiveLanguage();
     final now = DateTime.now().millisecondsSinceEpoch;
     final wordId = _uuid.v4();
+
+    Word tmpWord = Word(
+      id: wordId,
+      wordText: text.trim(),
+      languageCode: language,
+      createdAt: now,
+      updatedAt: now,
+      isFavorite: false,
+    );
+
     await wordsDao.insertOrReviveWord(
       WordsCompanion.insert(
         id: wordId,
@@ -40,7 +51,7 @@ class WordRepositoryImpl implements WordRepository {
         deletedAt: const Value(null),
       ),
     );
-    return wordId;
+    return tmpWord;
   }
 
   @override
@@ -56,9 +67,11 @@ class WordRepositoryImpl implements WordRepository {
   }
 
   @override
-  Future<int> getWordCount({bool favoritesOnly = false}) async {
+  Future<int> getWordCount(
+      String? query,
+      {bool favoritesOnly = false}) async {
     final language = await _requireActiveLanguage();
-    return wordsDao.countWords(language, favoritesOnly: favoritesOnly);
+    return wordsDao.countWords(query, language,favoritesOnly: favoritesOnly);
   }
 
   @override
