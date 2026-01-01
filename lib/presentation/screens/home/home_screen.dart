@@ -162,57 +162,65 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
 
-
               const SizedBox(height: 12),
               // const Divider(),
               /// All / Favourites toggle
               Row(
                 children: [
                   ChoiceChip(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 5,
+                    ),
                     shape: RoundedSuperellipseBorder(
-                        side: BorderSide(
-                            color: Colors.transparent
-                        ),
-                        borderRadius: BorderRadius.circular(30)),
+                      side: BorderSide(color: Colors.transparent),
+                      borderRadius: BorderRadius.circular(30),
+                    ),
                     showCheckmark: false,
                     selectedColor: primaryColor,
                     backgroundColor: Colors.grey[200],
-                    label:  Text('All (${allWordCountAsync.value})',
-                        style:TextStyle(
-                          color: !favoritesOnly ? Colors.white : textGrey,
-                        )),                    selected: !favoritesOnly,
+                    label: Text(
+                      'All (${allWordCountAsync.value})',
+                      style: TextStyle(
+                        color: !favoritesOnly ? Colors.white : textGrey,
+                      ),
+                    ),
+                    selected: !favoritesOnly,
                     onSelected: (_) {
                       ref.read(favoritesOnlyProvider.notifier).state = false;
                       ref.read(activeLanguageTriggerProvider.notifier).state++;
                     },
                   ),
 
-
                   const SizedBox(width: 12),
 
-
                   ChoiceChip(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 15,
+                      vertical: 5,
+                    ),
+
                     shape: RoundedSuperellipseBorder(
-                      side: BorderSide(
-                        color: Colors.transparent
-                      ),
-                        borderRadius: BorderRadius.circular(30)),
+                      side: BorderSide(color: Colors.transparent),
+                      borderRadius: BorderRadius.circular(30),
+                    ),
                     backgroundColor: Colors.grey[200],
                     selectedColor: primaryColor,
                     showCheckmark: false,
-                    label:  Text('Starred (${starredWordCountAsync.value})',
-                      style:TextStyle(
+                    label: Text(
+                      'Starred (${starredWordCountAsync.value})',
+                      style: TextStyle(
                         color: favoritesOnly ? Colors.white : textGrey,
-                      )),
+                      ),
+                    ),
                     selected: favoritesOnly,
                     onSelected: (_) {
                       ref.read(favoritesOnlyProvider.notifier).state = true;
                       ref.read(activeLanguageTriggerProvider.notifier).state++;
                     },
-                  )
-
-                  ,
+                  ),
                   const Spacer(),
+
                   // wordCountAsync.when(
                   //   data: (c) => Text('$c'),
                   //   loading:
@@ -223,13 +231,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   //       ),
                   //   error: (_, __) => const Text('—'),
                   // ),
-
-
-
-
-
-
-
                 ],
               ),
 
@@ -260,6 +261,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         final word = words[index];
                         return _WordListItem(
                           text: word.wordText,
+                          meaning: word.shortMeaning,
                           isFavorite: word.isFavorite,
                           onTap: () async {
                             await Navigator.of(context).push(
@@ -373,9 +375,11 @@ class _WordListItem extends StatelessWidget {
   final VoidCallback onTap;
   final bool isFavorite;
   final VoidCallback onToggleFavorite;
+  final String? meaning;
 
   const _WordListItem({
     required this.text,
+    required this.meaning,
     required this.isFavorite,
     required this.onTap,
     required this.onToggleFavorite,
@@ -383,30 +387,99 @@ class _WordListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.grey.shade100,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(text, style: Theme.of(context).textTheme.bodyLarge),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    text.toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    isFavorite ? Icons.bookmark : Icons.bookmark_outline,
+                    color: isFavorite ? primaryColor :Colors.grey,
+                  ),
+                  onPressed: onToggleFavorite,
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: primaryColor.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(20),
               ),
-              IconButton(
-                tooltip: 'Favourite',
-                icon: Icon(isFavorite ? Icons.star : Icons.star_border),
-                onPressed: onToggleFavorite,
+              child: Text(
+              // word.partOfSpeech,
+                text.toLowerCase(),
+              style: const TextStyle(
+              color: primaryColor,
+              fontWeight: FontWeight.w600,
               ),
-            ],
-          ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              meaning ?? '',
+              style: const TextStyle(
+                fontSize: 15,
+                color: textGrey,
+                height: 1.5,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
+
+  // return Material(
+  //   color: Colors.grey.shade100,
+  //   borderRadius: BorderRadius.circular(10),
+  //   child: InkWell(
+  //     borderRadius: BorderRadius.circular(10),
+  //     onTap: onTap,
+  //     child: Padding(
+  //       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+  //       child: Row(
+  //         children: [
+  //           Expanded(
+  //             child: Text(text, style: Theme.of(context).textTheme.bodyLarge),
+  //           ),
+  //           IconButton(
+  //             tooltip: 'Favourite',
+  //             icon: Icon(isFavorite ? Icons.star : Icons.star_border),
+  //             onPressed: onToggleFavorite,
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   ),
+  // );
 }
 
 /// ---------------------------------------------------------------------------
