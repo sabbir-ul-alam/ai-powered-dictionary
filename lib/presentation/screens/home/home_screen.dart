@@ -25,7 +25,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   var _searchController = TextEditingController();
   Timer? _debounce;
-  int _currentIndex = 0;
+  // int _currentIndex = 0;
 
 
   @override
@@ -42,15 +42,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ref.read(wordSearchQueryProvider.notifier).state = value;
     });
   }
-  void _onNavItemTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-
-    // IMPORTANT:
-    // Do NOT navigate yet unless you already have routes.
-    // This is visual state only for now.
-  }
+  // void _onNavItemTapped(int index) {
+  //   setState(() {
+  //     _currentIndex = index;
+  //   });
+  //
+  //   // IMPORTANT:
+  //   // Do NOT navigate yet unless you already have routes.
+  //   // This is visual state only for now.
+  // }
 
 
   void _clearSearch() {
@@ -82,10 +82,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Scaffold(
       backgroundColor: backgroundColor,
 
-      bottomNavigationBar: AppBottomBar(
-        currentIndex: _currentIndex, // existing state
-        onTap: _onNavItemTapped,      // existing handler
-      ),
+      // bottomNavigationBar: AppBottomBar(
+      //   currentIndex: _currentIndex, // existing state
+      //   onTap: _onNavItemTapped,      // existing handler
+      // ),
 
       //     // Row(
       //     //   children: [
@@ -392,96 +392,7 @@ class _HeaderBar extends StatelessWidget {
 }
 
 
-class AppBottomBar extends StatelessWidget {
-  final int currentIndex;
-  final ValueChanged<int> onTap;
 
-  const AppBottomBar({
-    required this.currentIndex,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 72,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _NavItem(
-            icon: Icons.home_rounded,
-            label: 'Home',
-            isActive: currentIndex == 0,
-            onTap: () => onTap(0),
-          ),
-          _NavItem(
-            icon: Icons.quiz_outlined,
-            label: 'Quiz',
-            isActive: currentIndex == 1,
-            onTap: () => onTap(1),
-          ),
-          _NavItem(
-            icon: Icons.person_outline,
-            label: 'Profile',
-            isActive: currentIndex == 2,
-            onTap: () => onTap(2),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            size: 26,
-            color: isActive ? primaryColor : const Color(0xFF9CA3AF),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: isActive ? primaryColor : const Color(0xFF9CA3AF),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 
 
