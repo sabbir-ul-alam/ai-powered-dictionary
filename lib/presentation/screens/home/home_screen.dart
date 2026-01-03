@@ -7,6 +7,7 @@ import '../../../data/local/db/app_database.dart';
 import '../../state/providers.dart';
 import '../flashcards/flashcard_session_screen.dart';
 import '../language/language_selection_screen.dart';
+import '../settings/settings_screen.dart';
 import '../word/add_word_screen.dart';
 import '../word/word_detail_screen.dart';
 
@@ -383,6 +384,9 @@ class _HeaderBar extends StatelessWidget {
         IconButton(
           icon: const Icon(Icons.settings_outlined),
           onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            );
             // existing settings logic
           },
         ),

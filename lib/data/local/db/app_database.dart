@@ -38,6 +38,12 @@ part 'app_database.g.dart';
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
+  static Future<File> getDatabaseFile() async {
+    final dir = await getApplicationDocumentsDirectory();
+    return File('${dir.path}/dictionary.db');
+  }
+
+
   // IMPORTANT: bump schemaVersion whenever you change schema
   // If you already have schemaVersion = 1, bump to 2.
   @override
@@ -113,6 +119,8 @@ class AppDatabase extends _$AppDatabase {
         onConflict: DoNothing(),
       );
     }
+
+
   }
 }
 
@@ -123,3 +131,5 @@ LazyDatabase _openConnection() {
     return NativeDatabase(file);
   });
 }
+
+
