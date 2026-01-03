@@ -1,6 +1,8 @@
 import 'package:apd/data/local/db/daos/word_learning_progress_dao.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/config/firebase_api_key_provider.dart';
 import '../../data/local/db/app_database.dart';
 import '../../data/local/db/daos/words_dao.dart';
 import '../../data/local/db/daos/languages_dao.dart';
@@ -11,6 +13,7 @@ import '../../data/preferences/preferences_repository.dart';
 import '../../data/repositories/word_repository_impl.dart';
 import '../../data/repositories/language_repository_impl.dart';
 
+import '../../domain/config/api_key_provider.dart';
 import '../../domain/repositories/word_repository.dart';
 import '../../domain/repositories/language_repository.dart';
 import '../../data/ai/ai_dictionary_service.dart';
@@ -171,13 +174,12 @@ final favoritesOnlyProvider = StateProvider<bool>((ref) => false);
 /// ---------------------------------------------------------------------------
 /// MetaData (AI / USER / SYSTEM)
 /// ---------------------------------------------------------------------------
-final aiDictionaryServiceProvider =
-Provider<AiDictionaryService>((ref) {
-  //Inject properly later (env, secrets manager, etc.)
+final aiDictionaryServiceProvider = Provider<AiDictionaryService>((ref) {
   return AiDictionaryService(
-    apiKey: '',
+    ref.watch(apiKeyProviderProvider),
   );
 });
+
 
 
 final wordEnrichmentServiceProvider =
@@ -253,3 +255,15 @@ class FlashcardSessionFilter {
   @override
   int get hashCode => favoritesOnly.hashCode ^ unlearnedOnly.hashCode;
 }
+
+
+final firebaseRemoteConfigProvider =
+Provider<FirebaseRemoteConfig>((ref) {
+  return FirebaseRemoteConfig.instance;
+});
+
+final apiKeyProviderProvider = Provider<ApiKeyProvider>((ref) {
+  return FirebaseApiKeyProvider(
+    ref.watch(firebaseRemoteConfigProvider),
+  );
+});

@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+import '../../domain/config/api_key_provider.dart';
+
 /// ---------------------------------------------------------------------------
 /// AI DICTIONARY SERVICE (DeepSeek – Direct API)
 /// ---------------------------------------------------------------------------
@@ -9,7 +11,7 @@ import 'package:http/http.dart' as http;
 /// Responsible ONLY for generating meaning + examples.
 ///
 class AiDictionaryService {
-  final String apiKey;
+  final ApiKeyProvider apiKeyProvider;
 
   /// DeepSeek base URL (OpenAI-compatible)
   static const String _baseUrl = 'https://api.deepseek.com/v1';
@@ -17,14 +19,15 @@ class AiDictionaryService {
   /// Recommended model for dictionary usage
   static const String _model = 'deepseek-chat';
 
-  AiDictionaryService({
-    required this.apiKey,
-  });
+  AiDictionaryService(this.apiKeyProvider);
+
 
   Future<AiWordMetadata> generate({
     required String word,
     required String languageName,
   }) async {
+    final apiKey = await apiKeyProvider.getAiApiKey();
+
     final uri = Uri.parse('$_baseUrl/chat/completions');
 
     final response = await http.post(

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "972697118274",
+    "project_id": "ai-powered-dictionary-1f94f",
+    "storage_bucket": "ai-powered-dictionary-1f94f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:972697118274:android:12108f5049c9d331806fdb",
+        "android_client_info": {
+          "package_name": "com.sualsabbir.apd"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAf6FlB7pqm-AJcj46VKHIlYE5jnMC8luE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
