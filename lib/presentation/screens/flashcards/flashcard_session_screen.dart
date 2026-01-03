@@ -1,19 +1,19 @@
-import 'dart:math';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../state/providers.dart';
 import '../word/word_detail_screen.dart';
-import '../../../data/local/db/app_database.dart';
-import 'flashcard_card.dart';
 
 class FlashcardSessionScreen extends ConsumerStatefulWidget {
   final bool favoritesOnly;
+  final bool unlearnedOnly;
 
   const FlashcardSessionScreen({
     super.key,
     required this.favoritesOnly,
+    required this.unlearnedOnly,
   });
 
   @override
@@ -23,123 +23,194 @@ class FlashcardSessionScreen extends ConsumerStatefulWidget {
 
 class _FlashcardSessionScreenState
     extends ConsumerState<FlashcardSessionScreen> {
-  int _currentIndex = 0;
-  bool _isFlipped = false;
+  int _index = 0;
+  bool _flipped = false;
 
-  late List<Word> _words;
+  void _flip() => setState(() => _flipped = !_flipped);
 
-  @override
-  void initState() {
-    super.initState();
-    _words = [];
-  }
-
-  void _nextCard() {
-    if (_currentIndex < _words.length - 1) {
+  void _next(int total) {
+    if (_index < total - 1) {
       setState(() {
-        _currentIndex++;
-        _isFlipped = false;
+        _index++;
+        _flipped = false;
       });
+    } else {
+      Navigator.of(context).pop();
     }
   }
 
-  void _previousCard() {
-    if (_currentIndex > 0) {
-      setState(() {
-        _currentIndex--;
-        _isFlipped = false;
-      });
-    }
-  }
+  Future<void> _mark({
+    required String wordId,
+    required bool learned,
+    required int total,
+  }) async {
+    await ref.read(wordsLearningDaoProvider).setLearned(
+      wordId: wordId,
+      learned: learned,
+    );
 
-  void _toggleFlip() {
-    setState(() {
-      _isFlipped = !_isFlipped;
-    });
+    // Refresh dashboard + any lists that depend on counts
+    ref.read(activeLanguageTriggerProvider.notifier).state++;
+
+    // Invalidate metadata/word list is not needed here; progress is separate.
+    _next(total);
   }
 
   @override
   Widget build(BuildContext context) {
-    final wordsAsync = ref.watch(wordListProvider);
+    final filter = FlashcardSessionFilter(
+      favoritesOnly: widget.favoritesOnly,
+      unlearnedOnly: widget.unlearnedOnly,
+    );
+
+    final idsAsync = ref.watch(flashcardSessionWordIdsProvider(filter));
+
+    final title = widget.favoritesOnly
+        ? (widget.unlearnedOnly ? 'Favourites (Unlearned)' : 'Favourites')
+        : (widget.unlearnedOnly ? 'All (Unlearned)' : 'All Words');
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.favoritesOnly
-              ? 'Favourite Flashcards'
-              : 'Flashcards',
-        ),
-      ),
-      body: wordsAsync.when(
-        loading: () =>
-        const Center(child: CircularProgressIndicator()),
-        error: (_, __) =>
-        const Center(child: Text('Failed to load flashcards')),
-        data: (words) {
-          // Filter favourites here instead of touching provider state
-          _words = widget.favoritesOnly
-              ? words.where((w) => w.isFavorite).toList()
-              : words;
-
-          if (_words.isEmpty) {
-            return const Center(
-              child: Text('No words available for flashcards'),
-            );
+      appBar: AppBar(title: Text(title)),
+      body: idsAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (_, __) => const Center(child: Text('Failed to start session')),
+        data: (ids) {
+          if (ids.isEmpty) {
+            return const Center(child: Text('No cards for this session'));
           }
 
-          // Shuffle once per session
-          if (_currentIndex == 0) {
-            _words = List<Word>.from(_words)..shuffle(Random());
-          }
+          // Clamp index if list changed
+          if (_index >= ids.length) _index = 0;
 
-          final word = _words[_currentIndex];
+          final wordId = ids[_index];
+          final metadataAsync = ref.watch(wordMetadataProvider(wordId));
 
-          return Column(
-            children: [
-              const SizedBox(height: 24),
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Text('${_index + 1} / ${ids.length}'),
+                const SizedBox(height: 16),
 
-              Text(
-                '${_currentIndex + 1} / ${_words.length}',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _flip,
+                    child: Card(
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: _flipped
+                              ? metadataAsync.when(
+                            loading: () => const CircularProgressIndicator(),
+                            error: (_, __) => const Text('Failed to load meaning'),
+                            data: (metadataJson) {
+                              if (metadataJson == null) {
+                                return const Text(
+                                  'No meaning yet.\nTap Edit on Word Details to generate or add it.',
+                                  textAlign: TextAlign.center,
+                                );
+                              }
+                              final decoded = json.decode(metadataJson) as Map<String, dynamic>;
+                              final meaning = decoded['meaning'] as String?;
+                              final examples =
+                                  (decoded['examples'] as List<dynamic>?)?.whereType<String>().toList() ?? const [];
 
-              const SizedBox(height: 24),
-
-              Expanded(
-                child: GestureDetector(
-                  onTap: _toggleFlip,
-                  child: FlashcardCard(
-                    word: word,
-                    isFlipped: _isFlipped,
+                              return Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  if (meaning != null && meaning.trim().isNotEmpty) ...[
+                                    Text(
+                                      meaning,
+                                      textAlign: TextAlign.center,
+                                      style: Theme.of(context).textTheme.titleMedium,
+                                    ),
+                                    const SizedBox(height: 16),
+                                  ],
+                                  if (examples.isEmpty)
+                                    const Text('No examples yet', textAlign: TextAlign.center)
+                                  else
+                                    ...examples.map(
+                                          (e) => Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 4),
+                                        child: Text('• $e', textAlign: TextAlign.center),
+                                      ),
+                                    ),
+                                ],
+                              );
+                            },
+                          )
+                              : Text(
+                            // For the front we need the actual word text.
+                            // We avoid a heavy join here; simplest approach:
+                            // load from wordListProvider cache if present, else show id short.
+                            _frontWordText(ref, wordId),
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.headlineMedium,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 16),
 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: _previousCard,
-                  ),
-                  ElevatedButton(
-                    onPressed: _toggleFlip,
-                    child: Text(_isFlipped ? 'Show Word' : 'Show Meaning'),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.arrow_forward),
-                    onPressed: _nextCard,
-                  ),
-                ],
-              ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => _mark(wordId: wordId, learned: true, total: ids.length),
+                        child: const Text('I know this'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => _mark(wordId: wordId, learned: false, total: ids.length),
+                        child: const Text('Still learning'),
+                      ),
+                    ),
+                  ],
+                ),
 
-              const SizedBox(height: 24),
-            ],
+                const SizedBox(height: 10),
+
+                TextButton(
+                  onPressed: _flip,
+                  child: Text(_flipped ? 'Show word' : 'Show meaning'),
+                ),
+              ],
+            ),
           );
         },
       ),
+    );
+  }
+
+  /// Best-effort: get word text from cached lists; fallback to placeholder.
+  String _frontWordText(WidgetRef ref, String wordId) {
+    final favoritesOnly = ref.read(favoritesOnlyProvider);
+    final listAsync = ref.read(wordListProvider);
+
+    return listAsync.maybeWhen(
+      data: (words) {
+        final w = words.firstWhere(
+              (x) => x.id == wordId,
+          orElse: () => words.isNotEmpty ? words.first : null as dynamic,
+        );
+        if (w == null) return 'Word';
+        // If user started "All (Unlearned)" we might be filtering; still okay.
+        // favoritesOnly is not used here; just avoids lint about unused local.
+        // ignore: unnecessary_statements
+        favoritesOnly;
+        return w.wordText;
+      },
+      orElse: () => 'Word',
     );
   }
 }

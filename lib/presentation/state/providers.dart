@@ -1,3 +1,4 @@
+import 'package:apd/data/local/db/daos/word_learning_progress_dao.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/local/db/app_database.dart';
@@ -31,6 +32,9 @@ final wordsDaoProvider = Provider<WordsDao>((ref) {
   return WordsDao(ref.watch(databaseProvider));
 });
 
+final wordsLearningDaoProvider = Provider<WordLearningProgressDao>((ref) {
+  return WordLearningProgressDao(ref.watch(databaseProvider));
+});
 final languagesDaoProvider = Provider<LanguagesDao>((ref) {
   return LanguagesDao(ref.watch(databaseProvider));
 });
@@ -61,6 +65,7 @@ final languageRepositoryProvider = Provider<LanguageRepository>((ref) {
 final wordRepositoryProvider = Provider<WordRepository>((ref) {
   return WordRepositoryImpl(
     ref.watch(wordsDaoProvider),
+    ref.watch(wordsLearningDaoProvider),
     ref.watch(preferencesRepositoryProvider),
   );
 });
@@ -190,3 +195,61 @@ final wordsStreamProvider = StreamProvider.autoDispose<List<Word>>((ref) {
   final dao = ref.watch(wordsDaoProvider);
   return dao.watchAllWords();
 });
+
+/// Flashcards dashboard stats
+final learningStatsAllProvider = FutureProvider<LearningStats>((ref) async {
+  ref.watch(activeLanguageTriggerProvider);
+  final lang = await ref.watch(languageRepositoryProvider).getActiveLanguage();
+  if (lang == null) return const LearningStats(total: 0, learned: 0);
+
+  return ref.watch(wordsLearningDaoProvider).getStats(
+    languageCode: lang.code,
+    favoritesOnly: false,
+  );
+});
+
+final learningStatsFavoritesProvider = FutureProvider<LearningStats>((ref) async {
+  ref.watch(activeLanguageTriggerProvider);
+  final lang = await ref.watch(languageRepositoryProvider).getActiveLanguage();
+  if (lang == null) return const LearningStats(total: 0, learned: 0);
+
+  return ref.watch(wordsLearningDaoProvider).getStats(
+    languageCode: lang.code,
+    favoritesOnly: true,
+  );
+});
+
+final flashcardSessionWordIdsProvider =
+FutureProvider.family<List<String>, FlashcardSessionFilter>((ref, filter) async {
+  ref.watch(activeLanguageTriggerProvider);
+  final lang = await ref.watch(languageRepositoryProvider).getActiveLanguage();
+  if (lang == null) return const [];
+
+  return ref.watch(wordsLearningDaoProvider).listWordIdsForSession(
+    languageCode: lang.code,
+    favoritesOnly: filter.favoritesOnly,
+    unlearnedOnly: filter.unlearnedOnly,
+  );
+});
+
+/// Session filter model
+class FlashcardSessionFilter {
+  final bool favoritesOnly;
+  final bool unlearnedOnly;
+
+  const FlashcardSessionFilter({
+    required this.favoritesOnly,
+    required this.unlearnedOnly,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+          other is FlashcardSessionFilter &&
+              runtimeType == other.runtimeType &&
+              favoritesOnly == other.favoritesOnly &&
+              unlearnedOnly == other.unlearnedOnly;
+
+  @override
+  int get hashCode => favoritesOnly.hashCode ^ unlearnedOnly.hashCode;
+}

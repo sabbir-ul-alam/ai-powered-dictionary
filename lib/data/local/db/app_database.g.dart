@@ -1188,12 +1188,517 @@ class WordMetadataCompanion extends UpdateCompanion<WordMetadataData> {
   }
 }
 
+class $WordLearningProgressTable extends WordLearningProgress
+    with TableInfo<$WordLearningProgressTable, WordLearningProgressData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WordLearningProgressTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _wordIdMeta = const VerificationMeta('wordId');
+  @override
+  late final GeneratedColumn<String> wordId = GeneratedColumn<String>(
+    'word_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _learningStatusMeta = const VerificationMeta(
+    'learningStatus',
+  );
+  @override
+  late final GeneratedColumn<String> learningStatus = GeneratedColumn<String>(
+    'learning_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('unlearned'),
+  );
+  static const VerificationMeta _correctCountMeta = const VerificationMeta(
+    'correctCount',
+  );
+  @override
+  late final GeneratedColumn<int> correctCount = GeneratedColumn<int>(
+    'correct_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _incorrectCountMeta = const VerificationMeta(
+    'incorrectCount',
+  );
+  @override
+  late final GeneratedColumn<int> incorrectCount = GeneratedColumn<int>(
+    'incorrect_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _lastReviewedAtMeta = const VerificationMeta(
+    'lastReviewedAt',
+  );
+  @override
+  late final GeneratedColumn<int> lastReviewedAt = GeneratedColumn<int>(
+    'last_reviewed_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    wordId,
+    learningStatus,
+    correctCount,
+    incorrectCount,
+    lastReviewedAt,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'word_learning_progress';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WordLearningProgressData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('word_id')) {
+      context.handle(
+        _wordIdMeta,
+        wordId.isAcceptableOrUnknown(data['word_id']!, _wordIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_wordIdMeta);
+    }
+    if (data.containsKey('learning_status')) {
+      context.handle(
+        _learningStatusMeta,
+        learningStatus.isAcceptableOrUnknown(
+          data['learning_status']!,
+          _learningStatusMeta,
+        ),
+      );
+    }
+    if (data.containsKey('correct_count')) {
+      context.handle(
+        _correctCountMeta,
+        correctCount.isAcceptableOrUnknown(
+          data['correct_count']!,
+          _correctCountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('incorrect_count')) {
+      context.handle(
+        _incorrectCountMeta,
+        incorrectCount.isAcceptableOrUnknown(
+          data['incorrect_count']!,
+          _incorrectCountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_reviewed_at')) {
+      context.handle(
+        _lastReviewedAtMeta,
+        lastReviewedAt.isAcceptableOrUnknown(
+          data['last_reviewed_at']!,
+          _lastReviewedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {wordId};
+  @override
+  WordLearningProgressData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WordLearningProgressData(
+      wordId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}word_id'],
+          )!,
+      learningStatus:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}learning_status'],
+          )!,
+      correctCount:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}correct_count'],
+          )!,
+      incorrectCount:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}incorrect_count'],
+          )!,
+      lastReviewedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_reviewed_at'],
+      ),
+      createdAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}created_at'],
+          )!,
+      updatedAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}updated_at'],
+          )!,
+    );
+  }
+
+  @override
+  $WordLearningProgressTable createAlias(String alias) {
+    return $WordLearningProgressTable(attachedDatabase, alias);
+  }
+}
+
+class WordLearningProgressData extends DataClass
+    implements Insertable<WordLearningProgressData> {
+  final String wordId;
+
+  /// 'unlearned' | 'learned'
+  final String learningStatus;
+  final int correctCount;
+  final int incorrectCount;
+  final int? lastReviewedAt;
+  final int createdAt;
+  final int updatedAt;
+  const WordLearningProgressData({
+    required this.wordId,
+    required this.learningStatus,
+    required this.correctCount,
+    required this.incorrectCount,
+    this.lastReviewedAt,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['word_id'] = Variable<String>(wordId);
+    map['learning_status'] = Variable<String>(learningStatus);
+    map['correct_count'] = Variable<int>(correctCount);
+    map['incorrect_count'] = Variable<int>(incorrectCount);
+    if (!nullToAbsent || lastReviewedAt != null) {
+      map['last_reviewed_at'] = Variable<int>(lastReviewedAt);
+    }
+    map['created_at'] = Variable<int>(createdAt);
+    map['updated_at'] = Variable<int>(updatedAt);
+    return map;
+  }
+
+  WordLearningProgressCompanion toCompanion(bool nullToAbsent) {
+    return WordLearningProgressCompanion(
+      wordId: Value(wordId),
+      learningStatus: Value(learningStatus),
+      correctCount: Value(correctCount),
+      incorrectCount: Value(incorrectCount),
+      lastReviewedAt:
+          lastReviewedAt == null && nullToAbsent
+              ? const Value.absent()
+              : Value(lastReviewedAt),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory WordLearningProgressData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WordLearningProgressData(
+      wordId: serializer.fromJson<String>(json['wordId']),
+      learningStatus: serializer.fromJson<String>(json['learningStatus']),
+      correctCount: serializer.fromJson<int>(json['correctCount']),
+      incorrectCount: serializer.fromJson<int>(json['incorrectCount']),
+      lastReviewedAt: serializer.fromJson<int?>(json['lastReviewedAt']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'wordId': serializer.toJson<String>(wordId),
+      'learningStatus': serializer.toJson<String>(learningStatus),
+      'correctCount': serializer.toJson<int>(correctCount),
+      'incorrectCount': serializer.toJson<int>(incorrectCount),
+      'lastReviewedAt': serializer.toJson<int?>(lastReviewedAt),
+      'createdAt': serializer.toJson<int>(createdAt),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+    };
+  }
+
+  WordLearningProgressData copyWith({
+    String? wordId,
+    String? learningStatus,
+    int? correctCount,
+    int? incorrectCount,
+    Value<int?> lastReviewedAt = const Value.absent(),
+    int? createdAt,
+    int? updatedAt,
+  }) => WordLearningProgressData(
+    wordId: wordId ?? this.wordId,
+    learningStatus: learningStatus ?? this.learningStatus,
+    correctCount: correctCount ?? this.correctCount,
+    incorrectCount: incorrectCount ?? this.incorrectCount,
+    lastReviewedAt:
+        lastReviewedAt.present ? lastReviewedAt.value : this.lastReviewedAt,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  WordLearningProgressData copyWithCompanion(
+    WordLearningProgressCompanion data,
+  ) {
+    return WordLearningProgressData(
+      wordId: data.wordId.present ? data.wordId.value : this.wordId,
+      learningStatus:
+          data.learningStatus.present
+              ? data.learningStatus.value
+              : this.learningStatus,
+      correctCount:
+          data.correctCount.present
+              ? data.correctCount.value
+              : this.correctCount,
+      incorrectCount:
+          data.incorrectCount.present
+              ? data.incorrectCount.value
+              : this.incorrectCount,
+      lastReviewedAt:
+          data.lastReviewedAt.present
+              ? data.lastReviewedAt.value
+              : this.lastReviewedAt,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WordLearningProgressData(')
+          ..write('wordId: $wordId, ')
+          ..write('learningStatus: $learningStatus, ')
+          ..write('correctCount: $correctCount, ')
+          ..write('incorrectCount: $incorrectCount, ')
+          ..write('lastReviewedAt: $lastReviewedAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    wordId,
+    learningStatus,
+    correctCount,
+    incorrectCount,
+    lastReviewedAt,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WordLearningProgressData &&
+          other.wordId == this.wordId &&
+          other.learningStatus == this.learningStatus &&
+          other.correctCount == this.correctCount &&
+          other.incorrectCount == this.incorrectCount &&
+          other.lastReviewedAt == this.lastReviewedAt &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class WordLearningProgressCompanion
+    extends UpdateCompanion<WordLearningProgressData> {
+  final Value<String> wordId;
+  final Value<String> learningStatus;
+  final Value<int> correctCount;
+  final Value<int> incorrectCount;
+  final Value<int?> lastReviewedAt;
+  final Value<int> createdAt;
+  final Value<int> updatedAt;
+  final Value<int> rowid;
+  const WordLearningProgressCompanion({
+    this.wordId = const Value.absent(),
+    this.learningStatus = const Value.absent(),
+    this.correctCount = const Value.absent(),
+    this.incorrectCount = const Value.absent(),
+    this.lastReviewedAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WordLearningProgressCompanion.insert({
+    required String wordId,
+    this.learningStatus = const Value.absent(),
+    this.correctCount = const Value.absent(),
+    this.incorrectCount = const Value.absent(),
+    this.lastReviewedAt = const Value.absent(),
+    required int createdAt,
+    required int updatedAt,
+    this.rowid = const Value.absent(),
+  }) : wordId = Value(wordId),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<WordLearningProgressData> custom({
+    Expression<String>? wordId,
+    Expression<String>? learningStatus,
+    Expression<int>? correctCount,
+    Expression<int>? incorrectCount,
+    Expression<int>? lastReviewedAt,
+    Expression<int>? createdAt,
+    Expression<int>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (wordId != null) 'word_id': wordId,
+      if (learningStatus != null) 'learning_status': learningStatus,
+      if (correctCount != null) 'correct_count': correctCount,
+      if (incorrectCount != null) 'incorrect_count': incorrectCount,
+      if (lastReviewedAt != null) 'last_reviewed_at': lastReviewedAt,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WordLearningProgressCompanion copyWith({
+    Value<String>? wordId,
+    Value<String>? learningStatus,
+    Value<int>? correctCount,
+    Value<int>? incorrectCount,
+    Value<int?>? lastReviewedAt,
+    Value<int>? createdAt,
+    Value<int>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return WordLearningProgressCompanion(
+      wordId: wordId ?? this.wordId,
+      learningStatus: learningStatus ?? this.learningStatus,
+      correctCount: correctCount ?? this.correctCount,
+      incorrectCount: incorrectCount ?? this.incorrectCount,
+      lastReviewedAt: lastReviewedAt ?? this.lastReviewedAt,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (wordId.present) {
+      map['word_id'] = Variable<String>(wordId.value);
+    }
+    if (learningStatus.present) {
+      map['learning_status'] = Variable<String>(learningStatus.value);
+    }
+    if (correctCount.present) {
+      map['correct_count'] = Variable<int>(correctCount.value);
+    }
+    if (incorrectCount.present) {
+      map['incorrect_count'] = Variable<int>(incorrectCount.value);
+    }
+    if (lastReviewedAt.present) {
+      map['last_reviewed_at'] = Variable<int>(lastReviewedAt.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WordLearningProgressCompanion(')
+          ..write('wordId: $wordId, ')
+          ..write('learningStatus: $learningStatus, ')
+          ..write('correctCount: $correctCount, ')
+          ..write('incorrectCount: $incorrectCount, ')
+          ..write('lastReviewedAt: $lastReviewedAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $WordsTable words = $WordsTable(this);
   late final $LanguagesTable languages = $LanguagesTable(this);
   late final $WordMetadataTable wordMetadata = $WordMetadataTable(this);
+  late final $WordLearningProgressTable wordLearningProgress =
+      $WordLearningProgressTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1202,6 +1707,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     words,
     languages,
     wordMetadata,
+    wordLearningProgress,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -2071,6 +2577,278 @@ typedef $$WordMetadataTableProcessedTableManager =
       WordMetadataData,
       PrefetchHooks Function({bool wordId})
     >;
+typedef $$WordLearningProgressTableCreateCompanionBuilder =
+    WordLearningProgressCompanion Function({
+      required String wordId,
+      Value<String> learningStatus,
+      Value<int> correctCount,
+      Value<int> incorrectCount,
+      Value<int?> lastReviewedAt,
+      required int createdAt,
+      required int updatedAt,
+      Value<int> rowid,
+    });
+typedef $$WordLearningProgressTableUpdateCompanionBuilder =
+    WordLearningProgressCompanion Function({
+      Value<String> wordId,
+      Value<String> learningStatus,
+      Value<int> correctCount,
+      Value<int> incorrectCount,
+      Value<int?> lastReviewedAt,
+      Value<int> createdAt,
+      Value<int> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$WordLearningProgressTableFilterComposer
+    extends Composer<_$AppDatabase, $WordLearningProgressTable> {
+  $$WordLearningProgressTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get wordId => $composableBuilder(
+    column: $table.wordId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get learningStatus => $composableBuilder(
+    column: $table.learningStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get correctCount => $composableBuilder(
+    column: $table.correctCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get incorrectCount => $composableBuilder(
+    column: $table.incorrectCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastReviewedAt => $composableBuilder(
+    column: $table.lastReviewedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$WordLearningProgressTableOrderingComposer
+    extends Composer<_$AppDatabase, $WordLearningProgressTable> {
+  $$WordLearningProgressTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get wordId => $composableBuilder(
+    column: $table.wordId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get learningStatus => $composableBuilder(
+    column: $table.learningStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get correctCount => $composableBuilder(
+    column: $table.correctCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get incorrectCount => $composableBuilder(
+    column: $table.incorrectCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastReviewedAt => $composableBuilder(
+    column: $table.lastReviewedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$WordLearningProgressTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WordLearningProgressTable> {
+  $$WordLearningProgressTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get wordId =>
+      $composableBuilder(column: $table.wordId, builder: (column) => column);
+
+  GeneratedColumn<String> get learningStatus => $composableBuilder(
+    column: $table.learningStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get correctCount => $composableBuilder(
+    column: $table.correctCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get incorrectCount => $composableBuilder(
+    column: $table.incorrectCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lastReviewedAt => $composableBuilder(
+    column: $table.lastReviewedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$WordLearningProgressTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WordLearningProgressTable,
+          WordLearningProgressData,
+          $$WordLearningProgressTableFilterComposer,
+          $$WordLearningProgressTableOrderingComposer,
+          $$WordLearningProgressTableAnnotationComposer,
+          $$WordLearningProgressTableCreateCompanionBuilder,
+          $$WordLearningProgressTableUpdateCompanionBuilder,
+          (
+            WordLearningProgressData,
+            BaseReferences<
+              _$AppDatabase,
+              $WordLearningProgressTable,
+              WordLearningProgressData
+            >,
+          ),
+          WordLearningProgressData,
+          PrefetchHooks Function()
+        > {
+  $$WordLearningProgressTableTableManager(
+    _$AppDatabase db,
+    $WordLearningProgressTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$WordLearningProgressTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer:
+              () => $$WordLearningProgressTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer:
+              () => $$WordLearningProgressTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> wordId = const Value.absent(),
+                Value<String> learningStatus = const Value.absent(),
+                Value<int> correctCount = const Value.absent(),
+                Value<int> incorrectCount = const Value.absent(),
+                Value<int?> lastReviewedAt = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WordLearningProgressCompanion(
+                wordId: wordId,
+                learningStatus: learningStatus,
+                correctCount: correctCount,
+                incorrectCount: incorrectCount,
+                lastReviewedAt: lastReviewedAt,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String wordId,
+                Value<String> learningStatus = const Value.absent(),
+                Value<int> correctCount = const Value.absent(),
+                Value<int> incorrectCount = const Value.absent(),
+                Value<int?> lastReviewedAt = const Value.absent(),
+                required int createdAt,
+                required int updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => WordLearningProgressCompanion.insert(
+                wordId: wordId,
+                learningStatus: learningStatus,
+                correctCount: correctCount,
+                incorrectCount: incorrectCount,
+                lastReviewedAt: lastReviewedAt,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$WordLearningProgressTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WordLearningProgressTable,
+      WordLearningProgressData,
+      $$WordLearningProgressTableFilterComposer,
+      $$WordLearningProgressTableOrderingComposer,
+      $$WordLearningProgressTableAnnotationComposer,
+      $$WordLearningProgressTableCreateCompanionBuilder,
+      $$WordLearningProgressTableUpdateCompanionBuilder,
+      (
+        WordLearningProgressData,
+        BaseReferences<
+          _$AppDatabase,
+          $WordLearningProgressTable,
+          WordLearningProgressData
+        >,
+      ),
+      WordLearningProgressData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2081,4 +2859,6 @@ class $AppDatabaseManager {
       $$LanguagesTableTableManager(_db, _db.languages);
   $$WordMetadataTableTableManager get wordMetadata =>
       $$WordMetadataTableTableManager(_db, _db.wordMetadata);
+  $$WordLearningProgressTableTableManager get wordLearningProgress =>
+      $$WordLearningProgressTableTableManager(_db, _db.wordLearningProgress);
 }

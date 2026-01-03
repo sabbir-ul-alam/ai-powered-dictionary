@@ -1,4 +1,5 @@
 import 'package:apd/presentation/screens/flashcards/flashcard_session_screen.dart';
+import 'package:apd/presentation/screens/flashcards/flashcards_dashboard_screen.dart';
 import 'package:apd/presentation/screens/home/home_screen.dart';
 import 'package:flutter/material.dart';
 import './screens/home/home_screen.dart';
@@ -32,7 +33,7 @@ class _AppShellState extends State<AppShell> {
         index: _currentIndex,
         children: const [
           HomeScreen(),
-          FlashcardSessionScreen(favoritesOnly: false,),
+          FlashcardsDashboardScreen(),
           // ProfileScreen(),
         ],
       ),

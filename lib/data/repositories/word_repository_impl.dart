@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 import '../../domain/repositories/word_repository.dart';
 import '../local/db/app_database.dart';
+import '../local/db/daos/word_learning_progress_dao.dart';
 import '../local/db/daos/words_dao.dart';
 import '../preferences/preferences_repository.dart';
 import '../local/db/app_database.dart';
@@ -9,9 +10,14 @@ import '../local/db/app_database.dart';
 class WordRepositoryImpl implements WordRepository {
   final WordsDao wordsDao;
   final PreferencesRepository preferences;
+  final WordLearningProgressDao progressDao;
+
   final _uuid = const Uuid();
 
-  WordRepositoryImpl(this.wordsDao, this.preferences);
+  WordRepositoryImpl(
+      this.wordsDao,
+      this.progressDao,
+      this.preferences);
 
   Future<String> _requireActiveLanguage() async {
     final lang = await preferences.getActiveLanguage();
@@ -51,6 +57,14 @@ class WordRepositoryImpl implements WordRepository {
         deletedAt: const Value(null),
       ),
     );
+
+    // Ensure learning progress exists (default unlearned)
+    await progressDao.ensureRowForWord(
+      wordId: wordId,
+      createdAt: now,
+      updatedAt: now,
+    );
+
     return tmpWord;
   }
 

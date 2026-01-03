@@ -55,10 +55,11 @@ class AppStartScreen extends ConsumerWidget {
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       ),
-      error: (_, __) => const Scaffold(
-        body: Center(child: Text('Something went wrong')),
+      error: (_, error) => Scaffold(
+        body: Center(child: Text('$error')),
       ),
-      data: (language) {
+
+        data: (language) {
         // If language is already selected, skip language selection
         if (language != null) {
           return const AppShell();

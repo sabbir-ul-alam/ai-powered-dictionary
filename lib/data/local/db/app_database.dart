@@ -1,42 +1,4 @@
-// import 'dart:io';
-// import 'package:drift/drift.dart';
-// import 'package:drift_flutter/drift_flutter.dart';
-// import 'package:path_provider/path_provider.dart';
-//
-// import 'tables/words_table.dart';
-// import 'tables/languages_table.dart';
-// import 'tables/word_metadata_table.dart';
-//
-// part 'app_database.g.dart';
-//
-// @DriftDatabase(
-//   tables: [
-//     Words,
-//     Languages,
-//     WordMetadata,
-//   ],
-// )
-// class AppDatabase extends _$AppDatabase {
-//   // AppDatabase() : super(_openConnection());
-//   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
-//
-//   @override
-//   int get schemaVersion => 1;
-//
-// // LazyDatabase _openConnection() {
-// //   return LazyDatabase(() async {
-// //     final dir = await getApplicationDocumentsDirectory();
-// //     final file = File('${dir.path}/dictionary.db');
-// //     return NativeDatabase(file);
-// //   });
-// // }
-//
-//
-//
-//
-//
-//
-//
+
 //   static QueryExecutor _openConnection() {
 //     return driftDatabase(
 //       name: 'my_database',
@@ -52,6 +14,7 @@
 
 import 'dart:io';
 
+import 'package:apd/data/local/db/tables/word_learning_progress.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:drift_flutter/drift_flutter.dart';
@@ -68,6 +31,7 @@ part 'app_database.g.dart';
     Words,
     Languages,
     WordMetadata,
+    WordLearningProgress
   ]
 
 )
@@ -77,7 +41,7 @@ class AppDatabase extends _$AppDatabase {
   // IMPORTANT: bump schemaVersion whenever you change schema
   // If you already have schemaVersion = 1, bump to 2.
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -89,6 +53,28 @@ class AppDatabase extends _$AppDatabase {
         if (from < 2) {
           await m.addColumn(words, words.isFavorite);
         }
+        // NEW learning progress table introduced at schemaVersion=3
+        if (from < 3) {
+          await m.createTable(wordLearningProgress);
+
+          // Backfill progress for existing words
+          // Default: unlearned
+          await customStatement('''
+              INSERT OR IGNORE INTO word_learning_progress
+                (word_id, learning_status, correct_count, incorrect_count, last_reviewed_at, created_at, updated_at)
+              SELECT
+                w.id,
+                'unlearned',
+                0,
+                0,
+                NULL,
+                w.created_at,
+                w.updated_at
+              FROM words w
+              WHERE w.deleted_at IS NULL;
+            ''');
+        }
+
       };
 
       // Seed languages AFTER tables are created
