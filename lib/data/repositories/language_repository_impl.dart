@@ -2,7 +2,6 @@ import '../../domain/repositories/language_repository.dart';
 import '../local/db/app_database.dart';
 import '../local/db/daos/languages_dao.dart';
 import '../preferences/preferences_repository.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class LanguageRepositoryImpl implements LanguageRepository {
   final LanguagesDao languagesDao;

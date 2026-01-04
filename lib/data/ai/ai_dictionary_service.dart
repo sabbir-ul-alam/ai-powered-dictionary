@@ -86,7 +86,6 @@ Return ONLY valid JSON in this format:
 
     // Defensive JSON parsing (models sometimes add whitespace)
     final parsedJson = _extractJson(content);
-    print(parsedJson.toString());
 
     return AiWordMetadata(
         aiWordSpelling: parsedJson['word'] as String ?? '',
@@ -135,18 +134,25 @@ class AiWordMetadata {
   final String meaning;
   final List<String> examples;
   final String? partOfSpeech;
-  // final String? pronunciation;
   final List<AiWordForm> forms;
 
   AiWordMetadata({
     required this.aiWordSpelling,
     required this.meaning,
-  required this.examples,
-  this.partOfSpeech,
-  // this.pronunciation,
-  required this.forms,
-});
+    required this.examples,
+    this.partOfSpeech,
+    required this.forms,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'word': aiWordSpelling,
+    'meaning': meaning,
+    'examples': examples,
+    'partOfSpeech': partOfSpeech,
+    'forms': forms.map((f) => f.toJson()).toList(),
+  };
 }
+
 
 class AiWordForm {
   final String label;
@@ -156,4 +162,9 @@ class AiWordForm {
     required this.label,
     required this.value,
   });
+
+  Map<String, dynamic> toJson() => {
+    'label': label,
+    'value': value,
+  };
 }

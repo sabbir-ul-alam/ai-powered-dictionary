@@ -14,14 +14,17 @@ class WordsDao extends DatabaseAccessor<AppDatabase> with _$WordsDaoMixin {
   ///
   /// If a word exists but is soft-deleted, revive it instead of inserting.
   ///
-  Future<void> insertOrReviveWord(WordsCompanion word) async {
+  Future<String> insertOrReviveWord(WordsCompanion word) async {
+    late final  String existingId ;
     final existing = await (select(words)
       ..where((w) =>
       w.languageCode.equals(word.languageCode.value) &
       w.wordText.equals(word.wordText.value)))
         .getSingleOrNull();
 
+    // 0274431e-f17a-462d-8e2c-6f2c57491598
     if (existing != null) {
+      existingId= existing.id ;
       // Revive soft-deleted word
       await (update(words)..where((w) => w.id.equals(existing.id))).write(
         WordsCompanion(
@@ -29,9 +32,13 @@ class WordsDao extends DatabaseAccessor<AppDatabase> with _$WordsDaoMixin {
           updatedAt: Value(word.updatedAt.value),
         ),
       );
+      print('existingid $existingId');
+      return existingId;
+
     } else {
       // Fresh insert
       await into(words).insert(word);
+      return word.id.value;
     }
   }
 
@@ -39,13 +46,9 @@ class WordsDao extends DatabaseAccessor<AppDatabase> with _$WordsDaoMixin {
 
   Future<void> updateWord(WordsCompanion word) => update(words).replace(word);
 
-  Future<void> softDeleteWord(String id, int deletedAt) =>
-      (update(words)..where((w) => w.id.equals(id))).write(
-        WordsCompanion(
-          deletedAt: Value(deletedAt),
-          updatedAt: Value(deletedAt),
-        ),
-      );
+  Future<int> hardDeleteWord(String id) {
+    return (delete(words)..where((w) => w.id.equals(id))).go();
+  }
 
   Future<List<Word>> listWords(
       String languageCode, {

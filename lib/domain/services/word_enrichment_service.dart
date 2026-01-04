@@ -27,16 +27,24 @@ class WordEnrichmentService {
       languageName: languageName,
     );
 
-    print(result.toString());
+    print('from autoGenerateMetadata: $result');
 
-    Word updatedWord = word.copyWith(wordText: result.aiWordSpelling, shortMeaning: Value(result.meaning));
+    Word updatedWord = word.copyWith(
+        wordText: result.aiWordSpelling,
+        partsOfSpeech:Value(result.partOfSpeech),
+        shortMeaning: Value(result.meaning));
     await wordsDao.updateWord(updatedWord.toCompanion(true));
 
     await metadataDao.upsertMetadataForWord(
       wordId: word.id,
       metadataJson: jsonEncode({
+        'word': result.aiWordSpelling,
         'meaning': result.meaning,
+        'partOfSpeech': result.partOfSpeech,
         'examples': result.examples,
+        'forms': result.forms.map((f) {
+          return f.toJson();
+        }).toList(),
       }),
     );
   }

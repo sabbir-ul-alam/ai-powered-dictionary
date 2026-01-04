@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -164,6 +163,8 @@ class _AddWordScreenState extends ConsumerState<AddWordScreen> {
         text: _controller.text.trim(),
       );
 
+      print('After add word call$word');
+
 
       final language =
       await ref.read(languageRepositoryProvider).getActiveLanguage();
@@ -187,6 +188,7 @@ class _AddWordScreenState extends ConsumerState<AddWordScreen> {
         Navigator.of(context).pop();
       }
     } catch (e) {
+      print(e);
       // Basic error handling for Phase 1
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

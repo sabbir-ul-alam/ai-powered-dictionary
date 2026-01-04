@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/local/db/app_database.dart';
 import '../../state/providers.dart';
-import '../flashcards/flashcard_session_screen.dart';
 import '../language/language_selection_screen.dart';
 import '../settings/settings_screen.dart';
 import '../word/add_word_screen.dart';
@@ -28,7 +27,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Timer? _debounce;
   // int _currentIndex = 0;
 
-
   @override
   void dispose() {
     _debounce?.cancel();
@@ -43,8 +41,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ref.read(wordSearchQueryProvider.notifier).state = value;
     });
   }
-
-
 
   void _clearSearch() {
     _searchController.clear();
@@ -75,7 +71,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Scaffold(
       backgroundColor: backgroundColor,
 
-
       /// ---------------------------------------------------------------------
       /// ADD WORD
       /// ---------------------------------------------------------------------
@@ -91,10 +86,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         },
         child: const Icon(Icons.add, size: 28, color: backgroundColor),
       ),
-      floatingActionButtonLocation:
-      FloatingActionButtonLocation.endFloat,
-
-
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
 
       body: SafeArea(
         child: Padding(
@@ -233,6 +225,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       itemBuilder: (context, index) {
                         final word = words[index];
                         return _WordListItem(
+                          partsOfspeech: word.partsOfSpeech,
                           text: word.wordText,
                           meaning: word.shortMeaning,
                           isFavorite: word.isFavorite,
@@ -335,9 +328,9 @@ class _HeaderBar extends StatelessWidget {
         IconButton(
           icon: const Icon(Icons.settings_outlined),
           onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
-            );
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
             // existing settings logic
           },
         ),
@@ -346,19 +339,16 @@ class _HeaderBar extends StatelessWidget {
   }
 }
 
-
-
-
-
-
 class _WordListItem extends StatelessWidget {
   final String text;
   final VoidCallback onTap;
   final bool isFavorite;
   final VoidCallback onToggleFavorite;
   final String? meaning;
+  final String? partsOfspeech;
 
   const _WordListItem({
+    required this.partsOfspeech,
     required this.text,
     required this.meaning,
     required this.isFavorite,
@@ -372,7 +362,7 @@ class _WordListItem extends StatelessWidget {
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.only(left: 15, right:15, top:  5, bottom: 15),
+        padding: const EdgeInsets.only(left: 20, right: 20, top: 5, bottom: 15),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
@@ -402,7 +392,7 @@ class _WordListItem extends StatelessWidget {
                 IconButton(
                   icon: Icon(
                     isFavorite ? Icons.bookmark : Icons.bookmark_outline,
-                    color: isFavorite ? primaryColor :Colors.grey,
+                    color: isFavorite ? primaryColor : Colors.grey,
                   ),
                   onPressed: onToggleFavorite,
                 ),
@@ -416,17 +406,20 @@ class _WordListItem extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-              // word.partOfSpeech,
-                text.toLowerCase(),
-              style: const TextStyle(
-              color: primaryColor,
-              fontWeight: FontWeight.w600,
-              ),
+                (partsOfspeech ?? 'Not found').toLowerCase(),
+                //   text.toLowerCase(),
+                style: const TextStyle(
+                  color: primaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
             const SizedBox(height: 12),
             Text(
-              meaning ?? '',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+
+              meaning?.toCapitalized() ?? ''.toCapitalized(),
               style: const TextStyle(
                 fontSize: 15,
                 color: textGrey,
@@ -438,7 +431,13 @@ class _WordListItem extends StatelessWidget {
       ),
     );
   }
+}
 
+extension on String {
+  toCapitalized() {
+    if (isEmpty) return this;
+    return '${this[0].toUpperCase()}${substring(1).toLowerCase()}';
+  }
 }
 
 /// ---------------------------------------------------------------------------

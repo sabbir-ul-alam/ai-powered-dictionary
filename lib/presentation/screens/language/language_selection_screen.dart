@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../state/providers.dart';
-import '../home/home_screen.dart';
 
 class LanguageSelectionScreen extends ConsumerStatefulWidget {
   const LanguageSelectionScreen({super.key});

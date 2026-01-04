@@ -1,12 +1,8 @@
-import 'package:apd/presentation/screens/flashcards/flashcard_session_screen.dart';
 import 'package:apd/presentation/screens/flashcards/flashcards_dashboard_screen.dart';
 import 'package:apd/presentation/screens/home/home_screen.dart';
 import 'package:flutter/material.dart';
-import './screens/home/home_screen.dart';
 import 'Util/bottom_bar.dart';
-// import 'quiz_screen.dart';
-// import 'profile_screen.dart';
-// import 'bottom_bar.dart';
+
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});

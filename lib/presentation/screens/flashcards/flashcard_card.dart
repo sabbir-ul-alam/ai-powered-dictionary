@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/local/db/app_database.dart';
-import '../../state/providers.dart';
 import '../word/word_detail_screen.dart';
 
 class FlashcardCard extends ConsumerWidget {

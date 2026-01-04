@@ -50,6 +50,17 @@ class $WordsTable extends Words with TableInfo<$WordsTable, Word> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _partsOfSpeechMeta = const VerificationMeta(
+    'partsOfSpeech',
+  );
+  @override
+  late final GeneratedColumn<String> partsOfSpeech = GeneratedColumn<String>(
+    'parts_of_speech',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -104,6 +115,7 @@ class $WordsTable extends Words with TableInfo<$WordsTable, Word> {
     wordText,
     languageCode,
     shortMeaning,
+    partsOfSpeech,
     createdAt,
     updatedAt,
     deletedAt,
@@ -151,6 +163,15 @@ class $WordsTable extends Words with TableInfo<$WordsTable, Word> {
         shortMeaning.isAcceptableOrUnknown(
           data['short_meaning']!,
           _shortMeaningMeta,
+        ),
+      );
+    }
+    if (data.containsKey('parts_of_speech')) {
+      context.handle(
+        _partsOfSpeechMeta,
+        partsOfSpeech.isAcceptableOrUnknown(
+          data['parts_of_speech']!,
+          _partsOfSpeechMeta,
         ),
       );
     }
@@ -210,6 +231,10 @@ class $WordsTable extends Words with TableInfo<$WordsTable, Word> {
         DriftSqlType.string,
         data['${effectivePrefix}short_meaning'],
       ),
+      partsOfSpeech: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}parts_of_speech'],
+      ),
       createdAt:
           attachedDatabase.typeMapping.read(
             DriftSqlType.int,
@@ -243,6 +268,7 @@ class Word extends DataClass implements Insertable<Word> {
   final String wordText;
   final String languageCode;
   final String? shortMeaning;
+  final String? partsOfSpeech;
   final int createdAt;
   final int updatedAt;
   final int? deletedAt;
@@ -252,6 +278,7 @@ class Word extends DataClass implements Insertable<Word> {
     required this.wordText,
     required this.languageCode,
     this.shortMeaning,
+    this.partsOfSpeech,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -265,6 +292,9 @@ class Word extends DataClass implements Insertable<Word> {
     map['language_code'] = Variable<String>(languageCode);
     if (!nullToAbsent || shortMeaning != null) {
       map['short_meaning'] = Variable<String>(shortMeaning);
+    }
+    if (!nullToAbsent || partsOfSpeech != null) {
+      map['parts_of_speech'] = Variable<String>(partsOfSpeech);
     }
     map['created_at'] = Variable<int>(createdAt);
     map['updated_at'] = Variable<int>(updatedAt);
@@ -284,6 +314,10 @@ class Word extends DataClass implements Insertable<Word> {
           shortMeaning == null && nullToAbsent
               ? const Value.absent()
               : Value(shortMeaning),
+      partsOfSpeech:
+          partsOfSpeech == null && nullToAbsent
+              ? const Value.absent()
+              : Value(partsOfSpeech),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       deletedAt:
@@ -304,6 +338,7 @@ class Word extends DataClass implements Insertable<Word> {
       wordText: serializer.fromJson<String>(json['wordText']),
       languageCode: serializer.fromJson<String>(json['languageCode']),
       shortMeaning: serializer.fromJson<String?>(json['shortMeaning']),
+      partsOfSpeech: serializer.fromJson<String?>(json['partsOfSpeech']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
       deletedAt: serializer.fromJson<int?>(json['deletedAt']),
@@ -318,6 +353,7 @@ class Word extends DataClass implements Insertable<Word> {
       'wordText': serializer.toJson<String>(wordText),
       'languageCode': serializer.toJson<String>(languageCode),
       'shortMeaning': serializer.toJson<String?>(shortMeaning),
+      'partsOfSpeech': serializer.toJson<String?>(partsOfSpeech),
       'createdAt': serializer.toJson<int>(createdAt),
       'updatedAt': serializer.toJson<int>(updatedAt),
       'deletedAt': serializer.toJson<int?>(deletedAt),
@@ -330,6 +366,7 @@ class Word extends DataClass implements Insertable<Word> {
     String? wordText,
     String? languageCode,
     Value<String?> shortMeaning = const Value.absent(),
+    Value<String?> partsOfSpeech = const Value.absent(),
     int? createdAt,
     int? updatedAt,
     Value<int?> deletedAt = const Value.absent(),
@@ -339,6 +376,8 @@ class Word extends DataClass implements Insertable<Word> {
     wordText: wordText ?? this.wordText,
     languageCode: languageCode ?? this.languageCode,
     shortMeaning: shortMeaning.present ? shortMeaning.value : this.shortMeaning,
+    partsOfSpeech:
+        partsOfSpeech.present ? partsOfSpeech.value : this.partsOfSpeech,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
@@ -356,6 +395,10 @@ class Word extends DataClass implements Insertable<Word> {
           data.shortMeaning.present
               ? data.shortMeaning.value
               : this.shortMeaning,
+      partsOfSpeech:
+          data.partsOfSpeech.present
+              ? data.partsOfSpeech.value
+              : this.partsOfSpeech,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
@@ -371,6 +414,7 @@ class Word extends DataClass implements Insertable<Word> {
           ..write('wordText: $wordText, ')
           ..write('languageCode: $languageCode, ')
           ..write('shortMeaning: $shortMeaning, ')
+          ..write('partsOfSpeech: $partsOfSpeech, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
@@ -385,6 +429,7 @@ class Word extends DataClass implements Insertable<Word> {
     wordText,
     languageCode,
     shortMeaning,
+    partsOfSpeech,
     createdAt,
     updatedAt,
     deletedAt,
@@ -398,6 +443,7 @@ class Word extends DataClass implements Insertable<Word> {
           other.wordText == this.wordText &&
           other.languageCode == this.languageCode &&
           other.shortMeaning == this.shortMeaning &&
+          other.partsOfSpeech == this.partsOfSpeech &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt &&
@@ -409,6 +455,7 @@ class WordsCompanion extends UpdateCompanion<Word> {
   final Value<String> wordText;
   final Value<String> languageCode;
   final Value<String?> shortMeaning;
+  final Value<String?> partsOfSpeech;
   final Value<int> createdAt;
   final Value<int> updatedAt;
   final Value<int?> deletedAt;
@@ -419,6 +466,7 @@ class WordsCompanion extends UpdateCompanion<Word> {
     this.wordText = const Value.absent(),
     this.languageCode = const Value.absent(),
     this.shortMeaning = const Value.absent(),
+    this.partsOfSpeech = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -430,6 +478,7 @@ class WordsCompanion extends UpdateCompanion<Word> {
     required String wordText,
     required String languageCode,
     this.shortMeaning = const Value.absent(),
+    this.partsOfSpeech = const Value.absent(),
     required int createdAt,
     required int updatedAt,
     this.deletedAt = const Value.absent(),
@@ -445,6 +494,7 @@ class WordsCompanion extends UpdateCompanion<Word> {
     Expression<String>? wordText,
     Expression<String>? languageCode,
     Expression<String>? shortMeaning,
+    Expression<String>? partsOfSpeech,
     Expression<int>? createdAt,
     Expression<int>? updatedAt,
     Expression<int>? deletedAt,
@@ -456,6 +506,7 @@ class WordsCompanion extends UpdateCompanion<Word> {
       if (wordText != null) 'word_text': wordText,
       if (languageCode != null) 'language_code': languageCode,
       if (shortMeaning != null) 'short_meaning': shortMeaning,
+      if (partsOfSpeech != null) 'parts_of_speech': partsOfSpeech,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
@@ -469,6 +520,7 @@ class WordsCompanion extends UpdateCompanion<Word> {
     Value<String>? wordText,
     Value<String>? languageCode,
     Value<String?>? shortMeaning,
+    Value<String?>? partsOfSpeech,
     Value<int>? createdAt,
     Value<int>? updatedAt,
     Value<int?>? deletedAt,
@@ -480,6 +532,7 @@ class WordsCompanion extends UpdateCompanion<Word> {
       wordText: wordText ?? this.wordText,
       languageCode: languageCode ?? this.languageCode,
       shortMeaning: shortMeaning ?? this.shortMeaning,
+      partsOfSpeech: partsOfSpeech ?? this.partsOfSpeech,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
@@ -502,6 +555,9 @@ class WordsCompanion extends UpdateCompanion<Word> {
     }
     if (shortMeaning.present) {
       map['short_meaning'] = Variable<String>(shortMeaning.value);
+    }
+    if (partsOfSpeech.present) {
+      map['parts_of_speech'] = Variable<String>(partsOfSpeech.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<int>(createdAt.value);
@@ -528,6 +584,7 @@ class WordsCompanion extends UpdateCompanion<Word> {
           ..write('wordText: $wordText, ')
           ..write('languageCode: $languageCode, ')
           ..write('shortMeaning: $shortMeaning, ')
+          ..write('partsOfSpeech: $partsOfSpeech, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
@@ -1727,6 +1784,7 @@ typedef $$WordsTableCreateCompanionBuilder =
       required String wordText,
       required String languageCode,
       Value<String?> shortMeaning,
+      Value<String?> partsOfSpeech,
       required int createdAt,
       required int updatedAt,
       Value<int?> deletedAt,
@@ -1739,6 +1797,7 @@ typedef $$WordsTableUpdateCompanionBuilder =
       Value<String> wordText,
       Value<String> languageCode,
       Value<String?> shortMeaning,
+      Value<String?> partsOfSpeech,
       Value<int> createdAt,
       Value<int> updatedAt,
       Value<int?> deletedAt,
@@ -1794,6 +1853,11 @@ class $$WordsTableFilterComposer extends Composer<_$AppDatabase, $WordsTable> {
 
   ColumnFilters<String> get shortMeaning => $composableBuilder(
     column: $table.shortMeaning,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get partsOfSpeech => $composableBuilder(
+    column: $table.partsOfSpeech,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1872,6 +1936,11 @@ class $$WordsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get partsOfSpeech => $composableBuilder(
+    column: $table.partsOfSpeech,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -1915,6 +1984,11 @@ class $$WordsTableAnnotationComposer
 
   GeneratedColumn<String> get shortMeaning => $composableBuilder(
     column: $table.shortMeaning,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get partsOfSpeech => $composableBuilder(
+    column: $table.partsOfSpeech,
     builder: (column) => column,
   );
 
@@ -1990,6 +2064,7 @@ class $$WordsTableTableManager
                 Value<String> wordText = const Value.absent(),
                 Value<String> languageCode = const Value.absent(),
                 Value<String?> shortMeaning = const Value.absent(),
+                Value<String?> partsOfSpeech = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
                 Value<int?> deletedAt = const Value.absent(),
@@ -2000,6 +2075,7 @@ class $$WordsTableTableManager
                 wordText: wordText,
                 languageCode: languageCode,
                 shortMeaning: shortMeaning,
+                partsOfSpeech: partsOfSpeech,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
@@ -2012,6 +2088,7 @@ class $$WordsTableTableManager
                 required String wordText,
                 required String languageCode,
                 Value<String?> shortMeaning = const Value.absent(),
+                Value<String?> partsOfSpeech = const Value.absent(),
                 required int createdAt,
                 required int updatedAt,
                 Value<int?> deletedAt = const Value.absent(),
@@ -2022,6 +2099,7 @@ class $$WordsTableTableManager
                 wordText: wordText,
                 languageCode: languageCode,
                 shortMeaning: shortMeaning,
+                partsOfSpeech: partsOfSpeech,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,

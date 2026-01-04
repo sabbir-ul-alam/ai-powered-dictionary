@@ -26,10 +26,10 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
   late final TextEditingController _wordCtrl;
   late final TextEditingController _meaningCtrl;
   late final TextEditingController _examplesCtrl;
-  late final TextEditingController _pronunciationCtrl;
+  late final TextEditingController _partOfSpeechController;
   late bool _isFavorite;
 
-  late String? _partOfSpeech;
+  // String? _partOfSpeech;
   bool _isEditing = false;
   bool _isSaving = false;
   bool _isGenerating = false;
@@ -37,25 +37,15 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
   String? _originalMetadataJson;
   final List<_WordFormRow> _formRows = [];
 
-  static const _posOptions = [
-    'noun',
-    'verb',
-    'adjective',
-    'adverb',
-    'pronoun',
-    'preposition',
-    'conjunction',
-    'interjection',
-  ];
-
   @override
   void initState() {
     super.initState();
     _wordCtrl = TextEditingController(text: widget.word.wordText.toUpperCase());
     _meaningCtrl = TextEditingController();
     _examplesCtrl = TextEditingController();
-    _pronunciationCtrl = TextEditingController();
+    _partOfSpeechController = TextEditingController();
     _isFavorite = widget.word.isFavorite;
+    // _partOfSpeech = widget.word.partsOfSpeech;
   }
 
   @override
@@ -63,7 +53,7 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
     _wordCtrl.dispose();
     _meaningCtrl.dispose();
     _examplesCtrl.dispose();
-    _pronunciationCtrl.dispose();
+    _partOfSpeechController.dispose();
     for (final row in _formRows) {
       row.dispose();
     }
@@ -82,7 +72,7 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
         centerTitle: true,
         titleTextStyle: TextStyle(color: textGrey),
         backgroundColor: backgroundColor,
-        actions: _buildActions(),
+        actions: _buildActions(context),
       ),
 
       body: SafeArea(
@@ -92,11 +82,9 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (_, __) => const Center(child: Text('Failed to load word')),
             data: (json) {
-              print(json);
               _ensureInitialised(json);
-              // print('#############$_partOfSpeech#############');
+              print('#############$json#############');
               return ListView(
-
                 children: [
                   _buildHeader(),
                   const SizedBox(height: 24),
@@ -109,12 +97,32 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
                     const SizedBox(height: 24),
                     _buildGenerateButton(),
                   ],
+                  if (!_isEditing) ...[
+                    const SizedBox(height: 24),
+                    _buildDeleteButton(context),
+                  ],
                 ],
               );
             },
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDeleteButton(BuildContext context) {
+    return TextButton.icon(
+      icon: const Icon(Icons.delete_outline),
+      onPressed: () => _confirmDelete(context),
+      label: const Text('Delete'),
+      style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+      // style: TextButton.styleFrom(
+      //   shape: const StadiumBorder(),
+      //   backgroundColor: primaryColor,
+      //   foregroundColor: Colors.white,
+      //   shadowColor: Colors.grey,
+      //   elevation: 5,
+      // ),
     );
   }
 
@@ -126,39 +134,39 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
       children: [
         SizedBox(
           height: 50,
-          child: _isEditing
-              ? Form(
-            key: _formKey,
-            child: TextFormField(
-              controller: _wordCtrl,
-              textAlign: TextAlign.center,
-              textAlignVertical: TextAlignVertical.center,
-              decoration: const InputDecoration(
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-                border: UnderlineInputBorder(borderSide: BorderSide.none),
-              ),
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-              inputFormatters: [
-                TextInputFormatter.withFunction((oldValue, newValue) {
-                  return newValue.copyWith(
-                    text: newValue.text.toUpperCase(),
-                  );
-                }),
-              ],
-            ),
-          )
-              : Center(
-            child: Text(
-              _wordCtrl.text.toUpperCase(),
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineLarge
-                  ?.copyWith(fontWeight: FontWeight.w600),
-            ),
-          ),
+          child:
+              _isEditing
+                  ? Form(
+                    key: _formKey,
+                    child: TextFormField(
+                      controller: _wordCtrl,
+                      textAlign: TextAlign.center,
+                      textAlignVertical: TextAlignVertical.center,
+                      decoration: const InputDecoration(
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                        border: UnderlineInputBorder(
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      style: Theme.of(context).textTheme.headlineLarge
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                      inputFormatters: [
+                        TextInputFormatter.withFunction((oldValue, newValue) {
+                          return newValue.copyWith(
+                            text: newValue.text.toUpperCase(),
+                          );
+                        }),
+                      ],
+                    ),
+                  )
+                  : Center(
+                    child: Text(
+                      _wordCtrl.text.toUpperCase(),
+                      style: Theme.of(context).textTheme.headlineLarge
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                  ),
         ),
         const SizedBox(height: 8),
         _buildPartsOfSpeech(),
@@ -169,29 +177,23 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
   }
 
   Widget _buildPartsOfSpeech() {
-    final text = _partOfSpeech != null ? _partOfSpeech!.toUpperCase():'';
-
     return _isEditing
-        ? Column(
-          children: [
-            TextField(
-              controller: _pronunciationCtrl,
-              textAlign: TextAlign.center,
-              decoration: const InputDecoration(hintText: 'Pronunciation'),
-            ),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
-              value: _partOfSpeech,
-              items:
-                  _posOptions
-                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                      .toList(),
-              onChanged: (v) => setState(() => _partOfSpeech = v),
-            ),
-          ],
+        ? TextField(
+          textAlign: TextAlign.center,
+          textAlignVertical: TextAlignVertical.center,
+          decoration: const InputDecoration(
+            isDense: true,
+            contentPadding: EdgeInsets.zero,
+            border: UnderlineInputBorder(borderSide: BorderSide.none),
+          ),
+
+          controller: _partOfSpeechController,
+          maxLines: 1,
         )
         : Text(
-          text.isEmpty ? '——' : text,
+          _partOfSpeechController.text.isEmpty
+              ? '——'
+              : _partOfSpeechController.text.toLowerCase(),
           style: Theme.of(
             context,
           ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
@@ -203,7 +205,14 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
       onPressed: () {},
       icon: const Icon(Icons.volume_up),
       label: const Text('Play Audio'),
-      style: ElevatedButton.styleFrom(shape: const StadiumBorder()),
+
+      style: ElevatedButton.styleFrom(
+        shape: const StadiumBorder(),
+        backgroundColor: primaryColor,
+        foregroundColor: Colors.white,
+        shadowColor: Colors.grey,
+        elevation: 5,
+      ),
     );
   }
 
@@ -214,11 +223,21 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
       title: 'Meaning',
       child:
           _isEditing
-              ? TextField(controller: _meaningCtrl, maxLines: null)
+              ? TextField(
+                // textAlign: TextAlign.center,
+                // textAlignVertical: TextAlignVertical.center,
+                decoration: const InputDecoration(
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
+                  border: UnderlineInputBorder(borderSide: BorderSide.none),
+                ),
+                controller: _meaningCtrl,
+                maxLines: null,
+              )
               : Text(
                 _meaningCtrl.text.isEmpty
                     ? 'No meaning added'
-                    : _meaningCtrl.text,
+                    : _meaningCtrl.text.toCapitalized(),
               ),
     );
   }
@@ -229,11 +248,16 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
       child:
           _isEditing
               ? TextField(
-                controller: _examplesCtrl,
-                maxLines: null,
+                // textAlign: TextAlign.center,
+                // textAlignVertical: TextAlignVertical.center,
                 decoration: const InputDecoration(
                   hintText: 'One example per line',
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
+                  border: UnderlineInputBorder(borderSide: BorderSide.none),
                 ),
+                controller: _examplesCtrl,
+                maxLines: null,
               )
               : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -271,37 +295,52 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Row(
+                // mainAxisAlignment: MainAxisAlignment.values[_formRows.length],
                 children: [
-                  Expanded(
-                    child:
-                        _isEditing
-                            ? TextField(
-                              controller: row.labelController,
-                              decoration: const InputDecoration(
-                                hintText: 'Form',
-                              ),
-                            )
-                            : Text(
-                              row.labelController.text,
-                              style: const TextStyle(color: Colors.grey),
+                  _isEditing
+                      ? SizedBox(
+                    width: 100,
+                        child: TextField(
+                          controller: row.labelController,
+
+                          decoration: const InputDecoration(
+                            hintText: 'Form',
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                            border: UnderlineInputBorder(
+                              borderSide: BorderSide.none,
                             ),
-                  ),
-                  Expanded(
-                    child:
-                        _isEditing
-                            ? TextField(
-                              controller: row.valueController,
-                              decoration: const InputDecoration(
-                                hintText: 'Value',
-                              ),
-                            )
-                            : Text(
-                              row.valueController.text,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                              ),
+                          ),
+                        ),
+                      )
+                      : Text(
+                        row.labelController.text.toCapitalized(),
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                  const Spacer(),
+
+                  _isEditing
+                      ? SizedBox(
+                    width: 100,
+                        child: TextField(
+                          controller: row.valueController,
+                          decoration: const InputDecoration(
+                            hintText: 'Value',
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                            border: UnderlineInputBorder(
+                              borderSide: BorderSide.none,
                             ),
-                  ),
+                          ),
+                        ),
+                      )
+                      : Text(
+                        row.valueController.text.toCapitalized(),
+                        // style: const TextStyle(
+                        //   fontWeight: FontWeight.w300,
+                        // ),
+                      ),
+
                   if (_isEditing)
                     IconButton(
                       icon: const Icon(Icons.close),
@@ -318,7 +357,7 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
           }),
           if (_isEditing)
             Align(
-              alignment: Alignment.centerLeft,
+              alignment: Alignment.center,
               child: TextButton.icon(
                 icon: const Icon(Icons.add),
                 label: const Text('Add form'),
@@ -344,6 +383,14 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
               : const Icon(Icons.auto_awesome),
+      style: TextButton.styleFrom(
+        foregroundColor: _isGenerating ? Colors.grey : primaryColor,
+
+        // elevation: 1,
+        // shadowColor: Colors.grey,
+        // shape: const StadiumBorder(),
+      ),
+      iconAlignment: IconAlignment.start,
       label: const Text('Regenerate with AI'),
       onPressed: _isGenerating ? null : _generateWithAi,
     );
@@ -351,7 +398,7 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
 
   // ───────────────────────── LOGIC ─────────────────────────
 
-  List<Widget> _buildActions() {
+  List<Widget> _buildActions(BuildContext context) {
     if (_isEditing) {
       return [
         IconButton(icon: const Icon(Icons.close), onPressed: _cancelEdit),
@@ -387,7 +434,7 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
 
     final data = jsonDecode(json) as Map<String, dynamic>;
     _meaningCtrl.text = data['meaning'] ?? '';
-    _partOfSpeech = data['partOfSpeech'];
+    _partOfSpeechController.text = data['partOfSpeech'] ?? '';
     _examplesCtrl.text = (data['examples'] as List?)?.join('\n') ?? '';
 
     for (final f in (data['forms'] as List?) ?? []) {
@@ -396,6 +443,7 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
   }
 
   void _cancelEdit() {
+    _wordCtrl.text = widget.word.wordText.toUpperCase();
     _formRows.forEach((r) => r.dispose());
     _formRows.clear();
     _originalMetadataJson = null;
@@ -407,42 +455,104 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
 
     setState(() => _isSaving = true);
 
-    final metadata = jsonEncode({
-      'type': _partOfSpeech,
-      'pronunciation': _pronunciationCtrl.text.trim(),
-      'meaning': _meaningCtrl.text.trim(),
-      'examples':
-          _examplesCtrl.text
-              .split('\n')
-              .where((e) => e.trim().isNotEmpty)
-              .toList(),
-      'forms':
-          _formRows
-              .where(
-                (r) =>
-                    r.labelController.text.isNotEmpty ||
-                    r.valueController.text.isNotEmpty,
-              )
-              .map(
-                (r) => {
-                  'label': r.labelController.text.trim(),
-                  'value': r.valueController.text.trim(),
-                },
-              )
-              .toList(),
-    });
+    try {
+      // Save word text
+      final tempWord = Word(
+        id: widget.word.id,
+        wordText: _wordCtrl.text.trim(),
+        languageCode: widget.word.languageCode,
+        //Need to add partsofspeech controller
+        partsOfSpeech: _partOfSpeechController.text,
+        shortMeaning: _meaningCtrl.text,
+        isFavorite: _isFavorite,
+        createdAt: widget.word.createdAt,
+        updatedAt: DateTime.now().millisecondsSinceEpoch,
+        deletedAt: widget.word.deletedAt,
+      );
 
-    await ref
-        .read(wordMetadataDaoProvider)
-        .upsertMetadataForWord(wordId: widget.word.id, metadataJson: metadata);
+      await ref.read(wordRepositoryProvider).updateWord(word: tempWord);
 
-    ref.invalidate(wordMetadataProvider(widget.word.id));
+      // Save metadata
+      final metadata = jsonEncode({
+        'partOfSpeech': _partOfSpeechController.text.trim(),
+        'meaning': _meaningCtrl.text.trim(),
+        'examples':
+            _examplesCtrl.text
+                .split('\n')
+                .where((e) => e.trim().isNotEmpty)
+                .toList(),
+        'forms':
+            _formRows
+                .where(
+                  (r) =>
+                      r.labelController.text.isNotEmpty ||
+                      r.valueController.text.isNotEmpty,
+                )
+                .map(
+                  (r) => {
+                    'label': r.labelController.text.trim(),
+                    'value': r.valueController.text.trim(),
+                  },
+                )
+                .toList(),
+      });
 
-    setState(() {
-      _isEditing = false;
-      _originalMetadataJson = metadata;
-      _isSaving = false;
-    });
+      await ref
+          .read(wordMetadataDaoProvider)
+          .upsertMetadataForWord(
+            wordId: widget.word.id,
+            metadataJson: metadata,
+          );
+      // IMPORTANT: force metadata reload
+      ref.invalidate(wordMetadataProvider(widget.word.id));
+
+      ref.read(activeLanguageTriggerProvider.notifier).state++;
+
+      setState(() {
+        _isEditing = false;
+        _originalMetadataJson = metadata;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  /// DELETE WORD
+  Future<void> _confirmDelete(BuildContext context) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          title: const Text('Delete word'),
+          content: const Text('Are you sure you want to delete this word?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDelete != true) return;
+
+    await ref.read(wordRepositoryProvider).deleteWord(widget.word.id);
+    ref.read(activeLanguageTriggerProvider.notifier).state++;
+
+    if (context.mounted) {
+      Navigator.of(context).pop();
+    }
   }
 
   Future<void> _generateWithAi() async {
@@ -450,28 +560,41 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
     try {
       final lang =
           await ref.read(languageRepositoryProvider).getActiveLanguage();
-      final r = await ref
-          .read(aiDictionaryServiceProvider)
-          .generate(word: _wordCtrl.text, languageName: lang!.displayName);
 
-      if (_meaningCtrl.text.isEmpty) {
-        _meaningCtrl.text = r.meaning;
-      }
-      if (_examplesCtrl.text.isEmpty) {
-        _examplesCtrl.text = r.examples.join('\n');
-      }
-      _partOfSpeech ??= r.partOfSpeech;
-      // if (_pronunciationCtrl.text.isEmpty) {
-      //   _pronunciationCtrl.text = r.pronunciation ?? '';
-      // }
-      if (_formRows.isEmpty) {
-        for (final f in r.forms) {
-          _formRows.add(_WordFormRow(label: f.label, value: f.value));
-        }
+      print('before generating${_wordCtrl.text.trim()}');
+      final aiResult = await ref
+          .read(aiDictionaryServiceProvider)
+          .generate(
+            word: _wordCtrl.text.trim(),
+            languageName: lang!.displayName,
+          );
+
+      // print('after generating${aiResult.meaning}');
+
+      _wordCtrl.text = aiResult.aiWordSpelling.toUpperCase();
+      _meaningCtrl.text = aiResult.meaning.toCapitalized();
+      _examplesCtrl.text = aiResult.examples.join('\n');
+      _partOfSpeechController.text = aiResult.partOfSpeech!.toLowerCase();
+
+      _formRows.clear();
+      for (final f in aiResult.forms) {
+        _formRows.add(
+          _WordFormRow(
+            label: f.label.toCapitalized(),
+            value: f.value.toCapitalized(),
+          ),
+        );
       }
     } finally {
       setState(() => _isGenerating = false);
     }
+  }
+}
+
+extension on String {
+  String toCapitalized() {
+    if (isEmpty) return this;
+    return '${this[0].toUpperCase()}${substring(1).toLowerCase()}';
   }
 }
 
@@ -488,8 +611,16 @@ class _DetailCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.09),
+            blurRadius: 4,
+            spreadRadius: .2,
+            offset: const Offset(1, 5),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -533,5 +664,6 @@ final wordMetadataProvider = FutureProvider.family<String?, String>((
 ) async {
   final dao = ref.watch(wordMetadataDaoProvider);
   final row = await dao.getByWordId(wordId);
+  print('%%%%%%%%$row%%%%%%%%');
   return row?.metadataJson;
 });

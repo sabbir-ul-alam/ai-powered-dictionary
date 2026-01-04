@@ -8,6 +8,7 @@ abstract class WordRepository {
   Future<Word> addWord({
     required String text,
     String? shortMeaning,
+    String? partsOfSpeech
   });
 
   Future<void> updateWord({

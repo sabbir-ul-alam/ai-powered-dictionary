@@ -203,7 +203,6 @@ class _FlashcardSessionScreenState
               (x) => x.id == wordId,
           orElse: () => words.isNotEmpty ? words.first : null as dynamic,
         );
-        if (w == null) return 'Word';
         // If user started "All (Unlearned)" we might be filtering; still okay.
         // favoritesOnly is not used here; just avoids lint about unused local.
         // ignore: unnecessary_statements

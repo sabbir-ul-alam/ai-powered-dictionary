@@ -6,7 +6,6 @@ import 'package:path_provider/path_provider.dart';
 import '../../data/local/db/app_database.dart';
 
 class LocalBackupService {
-  static const String _dbFileName = 'app.db';
   static const String _backupDirName = 'backups';
 
   /// Returns path to the live database

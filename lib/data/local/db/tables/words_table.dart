@@ -12,6 +12,9 @@ class Words extends Table {
   TextColumn get shortMeaning =>
       text().named('short_meaning').nullable()();
 
+  TextColumn get partsOfSpeech =>
+      text().named('parts_of_speech').nullable()();
+
   IntColumn get createdAt =>
       integer().named('created_at')();
 

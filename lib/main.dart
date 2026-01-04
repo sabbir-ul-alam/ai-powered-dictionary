@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'presentation/state/providers.dart';
 import 'presentation/screens/language/language_selection_screen.dart';
-import 'presentation/screens/home/home_screen.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';

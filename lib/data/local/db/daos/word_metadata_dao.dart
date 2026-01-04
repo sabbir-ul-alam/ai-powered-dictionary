@@ -24,6 +24,7 @@ class WordMetadataDao extends DatabaseAccessor<AppDatabase>
     required String wordId,
     required String metadataJson,
   }) async {
+    print('UpserMetadata$metadataJson');
     final existing = await (select(wordMetadata)
       ..where((m) => m.wordId.equals(wordId)))
         .getSingleOrNull();

@@ -5,7 +5,6 @@ import '../local/db/app_database.dart';
 import '../local/db/daos/word_learning_progress_dao.dart';
 import '../local/db/daos/words_dao.dart';
 import '../preferences/preferences_repository.dart';
-import '../local/db/app_database.dart';
 
 class WordRepositoryImpl implements WordRepository {
   final WordsDao wordsDao;
@@ -31,36 +30,41 @@ class WordRepositoryImpl implements WordRepository {
   Future<Word> addWord({
     required String text,
     String? shortMeaning,
+    String? partsOfSpeech
   }) async {
 
     final language = await _requireActiveLanguage();
     final now = DateTime.now().millisecondsSinceEpoch;
     final wordId = _uuid.v4();
 
-    Word tmpWord = Word(
-      id: wordId,
-      wordText: text.trim(),
-      languageCode: language,
-      createdAt: now,
-      updatedAt: now,
-      isFavorite: false,
-    );
 
-    await wordsDao.insertOrReviveWord(
+
+    final newId = await wordsDao.insertOrReviveWord(
       WordsCompanion.insert(
         id: wordId,
         wordText: text.trim(),
         languageCode: language,
-        shortMeaning: Value.absent(),
+        shortMeaning: const Value.absent(),
+        partsOfSpeech: const Value.absent(),
         createdAt: now,
         updatedAt: now,
         deletedAt: const Value(null),
       ),
     );
 
+    print(newId);
+
+    Word tmpWord = Word(
+      id: newId,
+      wordText: text.trim(),
+      languageCode: language,
+      createdAt: now,
+      updatedAt: now,
+      isFavorite: false,
+    );
     // Ensure learning progress exists (default unlearned)
     await progressDao.ensureRowForWord(
-      wordId: wordId,
+      wordId: newId,
       createdAt: now,
       updatedAt: now,
     );
@@ -90,8 +94,7 @@ class WordRepositoryImpl implements WordRepository {
 
   @override
   Future<void> deleteWord(String id) async {
-    final now = DateTime.now().millisecondsSinceEpoch;
-    await wordsDao.softDeleteWord(id, now);
+    await wordsDao.hardDeleteWord(id);
   }
 
   @override
@@ -116,6 +119,7 @@ class WordRepositoryImpl implements WordRepository {
         wordText: Value(word.wordText.trim()),
         languageCode: Value(language),
         shortMeaning: Value(word.shortMeaning),
+        partsOfSpeech: Value(word.partsOfSpeech),
         updatedAt: Value(now),
         createdAt: Value(word.createdAt)
       ),
