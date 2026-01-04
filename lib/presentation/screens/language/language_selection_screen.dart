@@ -60,9 +60,11 @@ class _LanguageSelectionScreenState
                      ),
                      child: Center(
                        child: Image.asset(
-                         'assets/images/language_bubbles.png',
-                         height: 110,
-                         fit: BoxFit.contain,
+                         // colorBlendMode: BlendMode.colorBurn,
+                         'images/language_bubbles.png',
+                         // height: 110,
+                         fit: BoxFit.fitWidth,
+
                        ),
                      ),
                    ),
