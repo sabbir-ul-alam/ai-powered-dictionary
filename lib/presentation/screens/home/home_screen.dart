@@ -43,15 +43,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ref.read(wordSearchQueryProvider.notifier).state = value;
     });
   }
-  // void _onNavItemTapped(int index) {
-  //   setState(() {
-  //     _currentIndex = index;
-  //   });
-  //
-  //   // IMPORTANT:
-  //   // Do NOT navigate yet unless you already have routes.
-  //   // This is visual state only for now.
-  // }
+
 
 
   void _clearSearch() {
@@ -83,47 +75,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Scaffold(
       backgroundColor: backgroundColor,
 
-      // bottomNavigationBar: AppBottomBar(
-      //   currentIndex: _currentIndex, // existing state
-      //   onTap: _onNavItemTapped,      // existing handler
-      // ),
-
-      //     // Row(
-      //     //   children: [
-      //     //     ElevatedButton.icon(
-      //     //       icon: const Icon(Icons.style),
-      //     //       label: const Text('Flashcards'),
-      //     //       onPressed: () {
-      //     //         Navigator.of(context).push(
-      //     //           MaterialPageRoute(
-      //     //             builder: (_) =>
-      //     //             const FlashcardSessionScreen(
-      //     //               favoritesOnly: false,
-      //     //             ),
-      //     //           ),
-      //     //         );
-      //     //       },
-      //     //     ),
-      //     //     const SizedBox(width: 8),
-      //     //     ElevatedButton.icon(
-      //     //       icon: const Icon(Icons.star),
-      //     //       label: const Text('Favourites'),
-      //     //       onPressed: () {
-      //     //         Navigator.of(context).push(
-      //     //           MaterialPageRoute(
-      //     //             builder: (_) =>
-      //     //             const FlashcardSessionScreen(
-      //     //               favoritesOnly: true,
-      //     //             ),
-      //     //           ),
-      //     //         );
-      //     //       },
-      //     //     ),
-      //     //   ],
-      //     // ),
-      //
-      //   ],
-      // ),
 
       /// ---------------------------------------------------------------------
       /// ADD WORD

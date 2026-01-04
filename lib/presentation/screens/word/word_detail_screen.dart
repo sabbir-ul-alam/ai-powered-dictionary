@@ -1,54 +1,72 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/local/db/app_database.dart';
 import '../../state/providers.dart';
 
+const primaryColor = Color(0xFF3B2EFF);
+const lightGrey = Color(0xCFDFEDEA);
+const textGrey = Color(0xFF6B7280);
+const backgroundColor = Color(0xFFF7F7F7);
+
 class WordDetailScreen extends ConsumerStatefulWidget {
   final Word word;
 
-  const WordDetailScreen({
-    super.key,
-    required this.word,
-  });
+  const WordDetailScreen({super.key, required this.word});
 
   @override
   ConsumerState<WordDetailScreen> createState() => _WordDetailScreenState();
 }
 
 class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
-  late final TextEditingController _wordController;
-  late final TextEditingController _meaningController;
-  late final TextEditingController _examplesController;
-
   final _formKey = GlobalKey<FormState>();
 
-  String? _originalMetadataJson;
+  late final TextEditingController _wordCtrl;
+  late final TextEditingController _meaningCtrl;
+  late final TextEditingController _examplesCtrl;
+  late final TextEditingController _pronunciationCtrl;
+  late bool _isFavorite;
 
+  late String? _partOfSpeech;
   bool _isEditing = false;
   bool _isSaving = false;
   bool _isGenerating = false;
-  late bool _isFavorite;
 
+  String? _originalMetadataJson;
+  final List<_WordFormRow> _formRows = [];
+
+  static const _posOptions = [
+    'noun',
+    'verb',
+    'adjective',
+    'adverb',
+    'pronoun',
+    'preposition',
+    'conjunction',
+    'interjection',
+  ];
 
   @override
   void initState() {
     super.initState();
-
-    _wordController = TextEditingController(text: widget.word.wordText);
-    _meaningController = TextEditingController();
-    _examplesController = TextEditingController();
+    _wordCtrl = TextEditingController(text: widget.word.wordText.toUpperCase());
+    _meaningCtrl = TextEditingController();
+    _examplesCtrl = TextEditingController();
+    _pronunciationCtrl = TextEditingController();
     _isFavorite = widget.word.isFavorite;
-
   }
 
   @override
   void dispose() {
-    _wordController.dispose();
-    _meaningController.dispose();
-    _examplesController.dispose();
+    _wordCtrl.dispose();
+    _meaningCtrl.dispose();
+    _examplesCtrl.dispose();
+    _pronunciationCtrl.dispose();
+    for (final row in _formRows) {
+      row.dispose();
+    }
     super.dispose();
   }
 
@@ -57,406 +75,463 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
     final metadataAsync = ref.watch(wordMetadataProvider(widget.word.id));
 
     return Scaffold(
+      backgroundColor: backgroundColor,
+
       appBar: AppBar(
-        title: const Text('Word Details'),
-        actions: [
-          IconButton(
-            tooltip: 'Favourite',
-            icon: Icon(_isFavorite  ? Icons.star : Icons.star_border),
-            onPressed: _toggleFavorite,
-          ),
-          ..._buildActions(context),
-        ],
+        title: Text('Word Detail'.toUpperCase()),
+        centerTitle: true,
+        titleTextStyle: TextStyle(color: textGrey),
+        backgroundColor: backgroundColor,
+        actions: _buildActions(),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: ListView(
-          children: [
-            /// WORD TEXT (VIEW / EDIT)
-            Form(
-              key: _formKey,
-              child: _isEditing
-                  ? TextFormField(
-                controller: _wordController,
-                autofocus: true,
-                style: Theme.of(context).textTheme.headlineMedium,
-                decoration: const InputDecoration(
-                  border: UnderlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Word cannot be empty';
-                  }
-                  return null;
-                },
-              )
-                  : Text(
-                _wordController.text,
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-            ),
 
-            const SizedBox(height: 32),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: metadataAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (_, __) => const Center(child: Text('Failed to load word')),
+            data: (json) {
+              print(json);
+              _ensureInitialised(json);
+              // print('#############$_partOfSpeech#############');
+              return ListView(
 
-            /// MEANING & EXAMPLES (READ + EDIT)
-            metadataAsync.when(
-              loading: () {
-                // Important: still render the fields in edit mode even while loading,
-                // so user can generate with AI immediately.
-                return _buildMeaningExamplesSection();
-              },
-              error: (_, __) {
-                // If metadata fails to load, still show UI (empty) in edit mode.
-                return _buildMeaningExamplesSection();
-              },
-              data: (metadataJson) {
-                // Critical fix: initialise controllers even if metadataJson is null
-                _ensureControllersInitialised(metadataJson);
-                return _buildMeaningExamplesSection();
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            /// Generate with AI button (only in edit mode)
-            if (_isEditing)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  icon: _isGenerating
-                      ? const SizedBox(
-                    height: 16,
-                    width: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                      : const Icon(Icons.auto_awesome),
-                  label: const Text('Generate with AI'),
-                  onPressed: _isGenerating ? null : _generateWithAi,
-                ),
-              ),
-          ],
+                children: [
+                  _buildHeader(),
+                  const SizedBox(height: 24),
+                  _buildMeaningCard(),
+                  const SizedBox(height: 16),
+                  _buildExampleCard(),
+                  const SizedBox(height: 16),
+                  _buildFormsCard(),
+                  if (_isEditing) ...[
+                    const SizedBox(height: 24),
+                    _buildGenerateButton(),
+                  ],
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
   }
 
-  /// Toggle favourite (UI + DB)
-  Future<void> _toggleFavorite() async {
-    final newValue = !_isFavorite;
+  // ───────────────────────── HEADER ─────────────────────────
 
-    setState(() {
-      _isFavorite = newValue;
-    });
-
-    await ref.read(wordRepositoryProvider).setFavorite(
-      id: widget.word.id,
-      isFavorite: newValue,
-    );
-
-    // Refresh home lists
-    ref.read(activeLanguageTriggerProvider.notifier).state++;
-  }
-
-  /// Build Meaning + Examples UI (works for both view and edit mode)
-  Widget _buildMeaningExamplesSection() {
+  Widget _buildHeader() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        /// MEANING
-        const _SectionTitle('Meaning'),
-        const SizedBox(height: 8),
-        _isEditing
-            ? TextField(
-          controller: _meaningController,
-          maxLines: null,
-          decoration: const InputDecoration(
-            hintText: 'Enter the meaning',
-            border: OutlineInputBorder(),
-          ),
-        )
-            : _meaningController.text.trim().isEmpty
-            ? const _EmptyValue('No meaning added yet')
-            : Text(
-          _meaningController.text,
-          style: const TextStyle(fontSize: 16),
-        ),
-
-        const SizedBox(height: 24),
-
-        /// EXAMPLES
-        const _SectionTitle('Examples'),
-        const SizedBox(height: 8),
-        _isEditing
-            ? TextField(
-          controller: _examplesController,
-          maxLines: null,
-          decoration: const InputDecoration(
-            hintText: 'One example per line',
-            border: OutlineInputBorder(),
-          ),
-        )
-            : _examplesController.text.trim().isEmpty
-            ? const _EmptyValue('No examples added yet')
-            : Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: _examplesController.text
-              .split('\n')
-              .map((e) => e.trim())
-              .where((e) => e.isNotEmpty)
-              .map(
-                (e) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Text('• $e'),
+        SizedBox(
+          height: 50,
+          child: _isEditing
+              ? Form(
+            key: _formKey,
+            child: TextFormField(
+              controller: _wordCtrl,
+              textAlign: TextAlign.center,
+              textAlignVertical: TextAlignVertical.center,
+              decoration: const InputDecoration(
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+                border: UnderlineInputBorder(borderSide: BorderSide.none),
+              ),
+              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+              inputFormatters: [
+                TextInputFormatter.withFunction((oldValue, newValue) {
+                  return newValue.copyWith(
+                    text: newValue.text.toUpperCase(),
+                  );
+                }),
+              ],
             ),
           )
-              .toList(),
+              : Center(
+            child: Text(
+              _wordCtrl.text.toUpperCase(),
+              style: Theme.of(context)
+                  .textTheme
+                  .headlineLarge
+                  ?.copyWith(fontWeight: FontWeight.w600),
+            ),
+          ),
         ),
+        const SizedBox(height: 8),
+        _buildPartsOfSpeech(),
+        const SizedBox(height: 8),
+        _buildAudioButton(),
       ],
     );
   }
 
-  /// Generate with AI (fills controllers immediately)
-  Future<void> _generateWithAi() async {
-    setState(() {
-      _isGenerating = true;
-    });
+  Widget _buildPartsOfSpeech() {
+    final text = _partOfSpeech != null ? _partOfSpeech!.toUpperCase():'';
 
-    try {
-      final language = await ref.read(languageRepositoryProvider).getActiveLanguage();
-
-      final aiResult = await ref.read(aiDictionaryServiceProvider).generate(
-        word: _wordController.text.trim(),
-        languageName: language!.displayName,
-      );
-
-      _meaningController.text = aiResult.meaning;
-      _examplesController.text = aiResult.examples.join('\n');
-
-      // Important: force rebuild for any widgets that read controller.text directly
-      if (mounted) {
-        setState(() {});
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
+    return _isEditing
+        ? Column(
+          children: [
+            TextField(
+              controller: _pronunciationCtrl,
+              textAlign: TextAlign.center,
+              decoration: const InputDecoration(hintText: 'Pronunciation'),
+            ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              value: _partOfSpeech,
+              items:
+                  _posOptions
+                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                      .toList(),
+              onChanged: (v) => setState(() => _partOfSpeech = v),
+            ),
+          ],
+        )
+        : Text(
+          text.isEmpty ? '——' : text,
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
         );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isGenerating = false;
-        });
-      }
-    }
   }
 
-  /// APP BAR ACTIONS
-  List<Widget> _buildActions(BuildContext context) {
+  Widget _buildAudioButton() {
+    return ElevatedButton.icon(
+      onPressed: () {},
+      icon: const Icon(Icons.volume_up),
+      label: const Text('Play Audio'),
+      style: ElevatedButton.styleFrom(shape: const StadiumBorder()),
+    );
+  }
+
+  // ───────────────────────── CARDS ─────────────────────────
+
+  Widget _buildMeaningCard() {
+    return _DetailCard(
+      title: 'Meaning',
+      child:
+          _isEditing
+              ? TextField(controller: _meaningCtrl, maxLines: null)
+              : Text(
+                _meaningCtrl.text.isEmpty
+                    ? 'No meaning added'
+                    : _meaningCtrl.text,
+              ),
+    );
+  }
+
+  Widget _buildExampleCard() {
+    return _DetailCard(
+      title: 'Example Sentence',
+      child:
+          _isEditing
+              ? TextField(
+                controller: _examplesCtrl,
+                maxLines: null,
+                decoration: const InputDecoration(
+                  hintText: 'One example per line',
+                ),
+              )
+              : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children:
+                    _examplesCtrl.text
+                        .split('\n')
+                        .where((e) => e.trim().isNotEmpty)
+                        .map(
+                          (e) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Text(
+                              '"$e"',
+                              style: const TextStyle(
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
+              ),
+    );
+  }
+
+  Widget _buildFormsCard() {
+    return _DetailCard(
+      title: 'Grammatical Forms',
+      child: Column(
+        children: [
+          if (_formRows.isEmpty)
+            const Text(
+              'No grammatical forms added',
+              style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
+            ),
+          ..._formRows.map((row) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                children: [
+                  Expanded(
+                    child:
+                        _isEditing
+                            ? TextField(
+                              controller: row.labelController,
+                              decoration: const InputDecoration(
+                                hintText: 'Form',
+                              ),
+                            )
+                            : Text(
+                              row.labelController.text,
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+                  ),
+                  Expanded(
+                    child:
+                        _isEditing
+                            ? TextField(
+                              controller: row.valueController,
+                              decoration: const InputDecoration(
+                                hintText: 'Value',
+                              ),
+                            )
+                            : Text(
+                              row.valueController.text,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                  ),
+                  if (_isEditing)
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        setState(() {
+                          _formRows.remove(row);
+                          row.dispose();
+                        });
+                      },
+                    ),
+                ],
+              ),
+            );
+          }),
+          if (_isEditing)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                icon: const Icon(Icons.add),
+                label: const Text('Add form'),
+                onPressed: () {
+                  setState(() {
+                    _formRows.add(_WordFormRow.empty());
+                  });
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGenerateButton() {
+    return TextButton.icon(
+      icon:
+          _isGenerating
+              ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+              : const Icon(Icons.auto_awesome),
+      label: const Text('Regenerate with AI'),
+      onPressed: _isGenerating ? null : _generateWithAi,
+    );
+  }
+
+  // ───────────────────────── LOGIC ─────────────────────────
+
+  List<Widget> _buildActions() {
     if (_isEditing) {
       return [
-        IconButton(
-          tooltip: 'Cancel',
-          icon: const Icon(Icons.close),
-          onPressed: _cancelEdit,
-        ),
-        IconButton(
-          tooltip: 'Save',
-          icon: const Icon(Icons.check),
-          onPressed: _isSaving ? null : _saveAll,
-        ),
+        IconButton(icon: const Icon(Icons.close), onPressed: _cancelEdit),
+        IconButton(icon: const Icon(Icons.check), onPressed: _save),
       ];
     }
-
     return [
       IconButton(
-        tooltip: 'Edit',
-        icon: const Icon(Icons.edit),
-        onPressed: () {
-          setState(() {
-            _isEditing = true;
-          });
+        icon: Icon(
+          _isFavorite ? Icons.bookmark : Icons.bookmark_outline,
+          color: _isFavorite ? primaryColor : Colors.grey,
+        ),
+        onPressed: () async {
+          await ref
+              .read(wordRepositoryProvider)
+              .setFavorite(id: widget.word.id, isFavorite: !_isFavorite);
+          setState(() => _isFavorite = !_isFavorite);
+          // ref.read(activeLanguageTriggerProvider.notifier)
+          //     .state++;
         },
       ),
       IconButton(
-        tooltip: 'Delete',
-        icon: const Icon(Icons.delete_outline),
-        onPressed: () => _confirmDelete(context),
+        icon: const Icon(Icons.edit),
+        onPressed: () => setState(() => _isEditing = true),
       ),
     ];
   }
 
-  /// CANCEL EDIT
-  void _cancelEdit() {
-    _wordController.text = widget.word.wordText;
+  void _ensureInitialised(String? json) {
+    if (_originalMetadataJson != null) return;
+    _originalMetadataJson = json;
+    if (json == null) return;
 
-    if (_originalMetadataJson != null) {
-      _applyMetadataToControllers(_originalMetadataJson!);
-    } else {
-      _meaningController.clear();
-      _examplesController.clear();
+    final data = jsonDecode(json) as Map<String, dynamic>;
+    _meaningCtrl.text = data['meaning'] ?? '';
+    _partOfSpeech = data['partOfSpeech'];
+    _examplesCtrl.text = (data['examples'] as List?)?.join('\n') ?? '';
+
+    for (final f in (data['forms'] as List?) ?? []) {
+      _formRows.add(_WordFormRow(label: f['label'], value: f['value']));
     }
+  }
+
+  void _cancelEdit() {
+    _formRows.forEach((r) => r.dispose());
+    _formRows.clear();
+    _originalMetadataJson = null;
+    setState(() => _isEditing = false);
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSaving = true);
+
+    final metadata = jsonEncode({
+      'type': _partOfSpeech,
+      'pronunciation': _pronunciationCtrl.text.trim(),
+      'meaning': _meaningCtrl.text.trim(),
+      'examples':
+          _examplesCtrl.text
+              .split('\n')
+              .where((e) => e.trim().isNotEmpty)
+              .toList(),
+      'forms':
+          _formRows
+              .where(
+                (r) =>
+                    r.labelController.text.isNotEmpty ||
+                    r.valueController.text.isNotEmpty,
+              )
+              .map(
+                (r) => {
+                  'label': r.labelController.text.trim(),
+                  'value': r.valueController.text.trim(),
+                },
+              )
+              .toList(),
+    });
+
+    await ref
+        .read(wordMetadataDaoProvider)
+        .upsertMetadataForWord(wordId: widget.word.id, metadataJson: metadata);
+
+    ref.invalidate(wordMetadataProvider(widget.word.id));
 
     setState(() {
       _isEditing = false;
+      _originalMetadataJson = metadata;
+      _isSaving = false;
     });
   }
 
-  /// SAVE WORD + METADATA
-  Future<void> _saveAll() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() {
-      _isSaving = true;
-    });
-
+  Future<void> _generateWithAi() async {
+    setState(() => _isGenerating = true);
     try {
-      // Save word text
-      final tempWord = Word(
-        id: widget.word.id,
-        wordText: _wordController.text.trim(),
-        languageCode: widget.word.languageCode,
-        shortMeaning: _meaningController.text,
-        isFavorite: _isFavorite,
-        createdAt: widget.word.createdAt,
-        updatedAt: DateTime.now().millisecondsSinceEpoch,
-        deletedAt: widget.word.deletedAt,
-      );
+      final lang =
+          await ref.read(languageRepositoryProvider).getActiveLanguage();
+      final r = await ref
+          .read(aiDictionaryServiceProvider)
+          .generate(word: _wordCtrl.text, languageName: lang!.displayName);
 
-      await ref.read(wordRepositoryProvider).updateWord(word: tempWord);
-
-      // Save metadata
-      final metadataJson = jsonEncode({
-        'meaning': _meaningController.text.trim().isEmpty ? null : _meaningController.text.trim(),
-        'examples': _examplesController.text
-            .split('\n')
-            .map((e) => e.trim())
-            .where((e) => e.isNotEmpty)
-            .toList(),
-      });
-
-      await ref.read(wordMetadataDaoProvider).upsertMetadataForWord(
-        wordId: widget.word.id,
-        metadataJson: metadataJson,
-      );
-      // IMPORTANT: force metadata reload
-      ref.invalidate(wordMetadataProvider(widget.word.id));
-
-      ref.read(activeLanguageTriggerProvider.notifier).state++;
-
-      setState(() {
-        _isEditing = false;
-        _originalMetadataJson = metadataJson;
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
-        });
+      if (_meaningCtrl.text.isEmpty) {
+        _meaningCtrl.text = r.meaning;
       }
+      if (_examplesCtrl.text.isEmpty) {
+        _examplesCtrl.text = r.examples.join('\n');
+      }
+      _partOfSpeech ??= r.partOfSpeech;
+      // if (_pronunciationCtrl.text.isEmpty) {
+      //   _pronunciationCtrl.text = r.pronunciation ?? '';
+      // }
+      if (_formRows.isEmpty) {
+        for (final f in r.forms) {
+          _formRows.add(_WordFormRow(label: f.label, value: f.value));
+        }
+      }
+    } finally {
+      setState(() => _isGenerating = false);
     }
   }
+}
 
-  /// DELETE WORD
-  Future<void> _confirmDelete(BuildContext context) async {
-    final shouldDelete = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Delete word'),
-          content: const Text('Are you sure you want to delete this word?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
+// ───────────────────────── HELPERS ─────────────────────────
+
+class _DetailCard extends StatelessWidget {
+  final String title;
+  final Widget child;
+
+  const _DetailCard({required this.title, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title.toUpperCase(),
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(color: Colors.grey),
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
     );
-
-    if (shouldDelete != true) return;
-
-    await ref.read(wordRepositoryProvider).deleteWord(widget.word.id);
-    ref.read(activeLanguageTriggerProvider.notifier).state++;
-
-    if (context.mounted) {
-      Navigator.of(context).pop();
-    }
   }
+}
 
-  /// METADATA INITIALISATION
-  void _ensureControllersInitialised(String? metadataJson) {
-    if (_originalMetadataJson != null) return;
+class _WordFormRow {
+  final TextEditingController labelController;
+  final TextEditingController valueController;
 
-    _originalMetadataJson = metadataJson;
+  _WordFormRow({required String label, required String value})
+    : labelController = TextEditingController(text: label),
+      valueController = TextEditingController(text: value);
 
-    if (metadataJson == null) {
-      // No metadata exists yet: keep controllers empty but initialised.
-      return;
-    }
+  _WordFormRow.empty()
+    : labelController = TextEditingController(),
+      valueController = TextEditingController();
 
-    _applyMetadataToControllers(metadataJson);
-  }
-
-  void _applyMetadataToControllers(String metadataJson) {
-    try {
-      final decoded = json.decode(metadataJson) as Map<String, dynamic>;
-
-      _meaningController.text = decoded['meaning'] as String? ?? '';
-
-      _examplesController.text = (decoded['examples'] as List<dynamic>?)
-          ?.whereType<String>()
-          .join('\n') ??
-          '';
-    } catch (_) {
-      _meaningController.clear();
-      _examplesController.clear();
-    }
+  void dispose() {
+    labelController.dispose();
+    valueController.dispose();
   }
 }
 
 /// TEMPORARY METADATA PROVIDER
-final wordMetadataProvider = FutureProvider.family<String?, String>((ref, wordId) async {
+final wordMetadataProvider = FutureProvider.family<String?, String>((
+  ref,
+  wordId,
+) async {
   final dao = ref.watch(wordMetadataDaoProvider);
   final row = await dao.getByWordId(wordId);
   return row?.metadataJson;
 });
-
-class _SectionTitle extends StatelessWidget {
-  final String text;
-
-  const _SectionTitle(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-        fontWeight: FontWeight.w600,
-      ),
-    );
-  }
-}
-
-class _EmptyValue extends StatelessWidget {
-  final String text;
-
-  const _EmptyValue(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: const TextStyle(
-        color: Colors.grey,
-        fontStyle: FontStyle.italic,
-      ),
-    );
-  }
-}

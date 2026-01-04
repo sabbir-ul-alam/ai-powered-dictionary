@@ -50,16 +50,18 @@ class AiDictionaryService {
           {
             'role': 'user',
             'content': '''
-Generate a simple dictionary meaning and 2 example sentences. Only the meaning should always be in English. Examples should always be in the same language as the word.
-
-Example Language: $languageName
-Meaning Language: English
-Word: "$word"
-
-Respond strictly in this JSON format:
+Give dictionary details for the "$word" in $languageName. Correct the word spelling. Only the meaning should always be in English.
+Examples should always be in the same language as the word. Return '' for a field if the value for that field is not available.
+Return ONLY valid JSON in this format:
 {
+  "word": "correct_spelling_string",
   "meaning": "string",
-  "examples": ["string", "string"]
+  "examples": ["string", "string"],
+  "partOfSpeech": "string",
+  "forms": [
+    { "label": "gender", "value": "string" },
+
+  ]
 }
 '''
           }
@@ -84,11 +86,22 @@ Respond strictly in this JSON format:
 
     // Defensive JSON parsing (models sometimes add whitespace)
     final parsedJson = _extractJson(content);
+    print(parsedJson.toString());
 
     return AiWordMetadata(
-      meaning: parsedJson['meaning'] as String,
-      examples:
-      (parsedJson['examples'] as List).whereType<String>().toList(),
+        aiWordSpelling: parsedJson['word'] as String ?? '',
+        meaning: parsedJson['meaning'] as String ?? '',
+        examples:
+        (parsedJson['examples'] as List).whereType<String>().toList() ?? [],
+        partOfSpeech: parsedJson['partOfSpeech'] ?? '',
+        // pronunciation: parsedJson['pronunciation'] ??'',
+        forms:
+        (parsedJson['forms'] as List?)?.map((e) => AiWordForm(
+          label: e['label'] ?? '',
+          value: e['value'] ?? '',
+        ))
+        .toList() ??
+        []
     );
   }
 
@@ -118,11 +131,29 @@ Respond strictly in this JSON format:
 /// ---------------------------------------------------------------------------
 
 class AiWordMetadata {
+  final String aiWordSpelling;
   final String meaning;
   final List<String> examples;
+  final String? partOfSpeech;
+  // final String? pronunciation;
+  final List<AiWordForm> forms;
 
   AiWordMetadata({
+    required this.aiWordSpelling,
     required this.meaning,
-    required this.examples,
+  required this.examples,
+  this.partOfSpeech,
+  // this.pronunciation,
+  required this.forms,
+});
+}
+
+class AiWordForm {
+  final String label;
+  final String value;
+
+  AiWordForm({
+    required this.label,
+    required this.value,
   });
 }

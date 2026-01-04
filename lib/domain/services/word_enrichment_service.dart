@@ -29,7 +29,7 @@ class WordEnrichmentService {
 
     print(result.toString());
 
-    Word updatedWord = word.copyWith(shortMeaning: Value(result.meaning));
+    Word updatedWord = word.copyWith(wordText: result.aiWordSpelling, shortMeaning: Value(result.meaning));
     await wordsDao.updateWord(updatedWord.toCompanion(true));
 
     await metadataDao.upsertMetadataForWord(
