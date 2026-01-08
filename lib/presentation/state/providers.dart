@@ -13,6 +13,8 @@ import '../../data/preferences/preferences_repository.dart';
 import '../../data/repositories/word_repository_impl.dart';
 import '../../data/repositories/language_repository_impl.dart';
 
+import '../../domain/audio/pronunciation_player.dart';
+import '../../domain/audio/tts_pronunciation_player.dart';
 import '../../domain/config/api_key_provider.dart';
 import '../../domain/repositories/word_repository.dart';
 import '../../domain/repositories/language_repository.dart';
@@ -266,4 +268,10 @@ final apiKeyProviderProvider = Provider<ApiKeyProvider>((ref) {
   return FirebaseApiKeyProvider(
     ref.watch(firebaseRemoteConfigProvider),
   );
+});
+
+
+final pronunciationPlayerProvider =
+Provider<PronunciationPlayer>((ref) {
+  return TtsPronunciationPlayer();
 });
