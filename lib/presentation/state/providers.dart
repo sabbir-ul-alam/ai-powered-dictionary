@@ -13,6 +13,7 @@ import '../../data/preferences/preferences_repository.dart';
 import '../../data/repositories/word_repository_impl.dart';
 import '../../data/repositories/language_repository_impl.dart';
 
+import '../../domain/audio/audio_cache_service.dart';
 import '../../domain/audio/pronunciation_player.dart';
 import '../../domain/audio/tts_pronunciation_player.dart';
 import '../../domain/config/api_key_provider.dart';
@@ -270,8 +271,14 @@ final apiKeyProviderProvider = Provider<ApiKeyProvider>((ref) {
   );
 });
 
+final audioCacheServiceProvider =
+Provider<AudioCacheService>((ref) {
+  return AudioCacheService();
+});
 
 final pronunciationPlayerProvider =
 Provider<PronunciationPlayer>((ref) {
-  return TtsPronunciationPlayer();
+  return TtsPronunciationPlayer(
+    ref.read(audioCacheServiceProvider),
+  );
 });
