@@ -18,6 +18,7 @@ import 'package:apd/data/local/db/tables/word_learning_progress.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:sqflite/sqflite.dart';
 
 import 'tables/words_table.dart';
 import 'tables/languages_table.dart';
@@ -38,10 +39,27 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   static Future<File> getDatabaseFile() async {
+    if (Platform.isAndroid) {
+      final dir = await getDatabasesPath(); // Flutter sqflite helper
+      return File('$dir/dictionary.db');
+    }
+
     final dir = await getApplicationDocumentsDirectory();
     return File('${dir.path}/dictionary.db');
   }
 
+  static Future<String> getDatabaseFilePath() async {
+    if (Platform.isAndroid) {
+      final dir = await getDatabasesPath(); // Flutter sqflite helper
+      final path =  '$dir/dictionary.db';
+      print(path);
+      return path;
+    }
+    final dir = await getApplicationDocumentsDirectory();
+    final path =  '${dir.path}/dictionary.db';
+    print(path);
+    return path;
+  }
 
   // IMPORTANT: bump schemaVersion whenever you change schema
   // If you already have schemaVersion = 1, bump to 2.
@@ -125,6 +143,12 @@ class AppDatabase extends _$AppDatabase {
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
+    if (Platform.isAndroid) {
+      final dir = await getDatabasesPath();
+      final file = File('$dir/dictionary.db');
+      return NativeDatabase(file);
+    }
+
     final dir = await getApplicationDocumentsDirectory();
     final file = File('${dir.path}/dictionary.db');
     return NativeDatabase(file);
