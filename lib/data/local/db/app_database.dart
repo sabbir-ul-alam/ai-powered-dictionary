@@ -117,8 +117,8 @@ class AppDatabase extends _$AppDatabase {
 
     // Define supported languages here
     const seedLanguages = [
-      {'code': 'en', 'name': 'English'},
-      {'code': 'de', 'name': 'German'},
+      {'code': 'en-US', 'name': 'English'},
+      {'code': 'de-DE', 'name': 'German'},
       {'code': 'es', 'name': 'Spanish'},
       {'code': 'fr', 'name': 'French'},
       {'code': 'it', 'name': 'Italian'},

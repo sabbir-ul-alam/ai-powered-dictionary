@@ -87,6 +87,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: const Icon(Icons.add, size: 28, color: backgroundColor),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      appBar:  _HeaderBar(activeLanguageAsync: activeLanguageAsync),
+
+
+
 
       body: SafeArea(
         child: Padding(
@@ -94,8 +98,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 12),
-              _HeaderBar(activeLanguageAsync: activeLanguageAsync),
               const SizedBox(height: 20),
 
               /// ---------------------------------------------------------------
@@ -284,59 +286,65 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 /// WORD LIST ITEM
 /// ---------------------------------------------------------------------------
 
-class _HeaderBar extends StatelessWidget {
+class _HeaderBar extends StatelessWidget implements PreferredSizeWidget {
   final AsyncValue<Language?> activeLanguageAsync;
 
-  const _HeaderBar({required this.activeLanguageAsync});
+  const _HeaderBar({super.key, required this.activeLanguageAsync});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        GestureDetector(
+    final language = activeLanguageAsync.valueOrNull;
+
+    return SafeArea(
+      bottom: false,
+      child: AppBar(
+        backgroundColor: backgroundColor,
+        automaticallyImplyLeading: false,
+        titleSpacing: 16,
+        title: GestureDetector(
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (_) => const LanguageSelectionScreen(),
+                builder: (_) => LanguageSelectionScreen(activeLanguage: language),
               ),
             );
           },
           child: Row(
             children: [
-              // activeLanguageAsync.when(
-              //         data: (language) => Text(language!.displayName),
-              //         loading: () => const Text('Loading…'),
-              //         error: (_, __) => const Text('Dictionary'),
-              //       ),
               Text(
                 activeLanguageAsync.when(
                   data: (language) => language!.displayName,
                   loading: () => 'Loading…',
                   error: (_, __) => 'Dictionary',
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 22,
+                  fontSize: 20, // slightly smaller to prevent overflow
                   fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(width: 6),
-              const Icon(Icons.keyboard_arrow_down),
+              const Icon(Icons.keyboard_arrow_right),
             ],
           ),
         ),
-        const Spacer(),
-        IconButton(
-          icon: const Icon(Icons.settings_outlined),
-          onPressed: () {
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
-            // existing settings logic
-          },
-        ),
-      ],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
 
 class _WordListItem extends StatelessWidget {

@@ -32,6 +32,8 @@ dependencies:
   drift_flutter: ^0.2.8
   path_provider: ^2.1.5
   sqflite: ^2.4.2
+  flutter_tts: ^4.2.5
+  just_audio: ^0.10.5
   flutter:
     sdk: flutter
 

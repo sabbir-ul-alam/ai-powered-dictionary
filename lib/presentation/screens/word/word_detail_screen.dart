@@ -202,7 +202,20 @@ class _WordDetailScreenState extends ConsumerState<WordDetailScreen> {
 
   Widget _buildAudioButton() {
     return ElevatedButton.icon(
-      onPressed: () {},
+      onPressed: () async {
+        final language =
+        await ref.read(languageRepositoryProvider)
+            .getActiveLanguage();
+
+        if (language == null) return;
+
+        await ref
+            .read(pronunciationPlayerProvider)
+            .play(
+          text: _wordCtrl.text,
+          languageCode: language.code,
+        );
+      },
       icon: const Icon(Icons.volume_up),
       label: const Text('Play Audio'),
 

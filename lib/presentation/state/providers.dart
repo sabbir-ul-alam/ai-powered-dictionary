@@ -13,6 +13,9 @@ import '../../data/preferences/preferences_repository.dart';
 import '../../data/repositories/word_repository_impl.dart';
 import '../../data/repositories/language_repository_impl.dart';
 
+import '../../domain/audio/audio_cache_service.dart';
+import '../../domain/audio/pronunciation_player.dart';
+import '../../domain/audio/tts_pronunciation_player.dart';
 import '../../domain/config/api_key_provider.dart';
 import '../../domain/repositories/word_repository.dart';
 import '../../domain/repositories/language_repository.dart';
@@ -141,7 +144,7 @@ final starredWordCountProvider = FutureProvider<int>((ref) async {
 /// ---------------------------------------------------------------------------
 
 final wordSuggestionsProvider =
-FutureProvider.family<List<String>, String>((ref, prefix) async {
+FutureProvider.family<List<Word>, String>((ref, prefix) async {
   ref.watch(activeLanguageTriggerProvider);
 
   final p = prefix.trim();
@@ -267,3 +270,17 @@ final apiKeyProviderProvider = Provider<ApiKeyProvider>((ref) {
     ref.watch(firebaseRemoteConfigProvider),
   );
 });
+
+final audioCacheServiceProvider =
+Provider<AudioCacheService>((ref) {
+  return AudioCacheService();
+});
+
+final pronunciationPlayerProvider =
+Provider<PronunciationPlayer>((ref) {
+  return TtsPronunciationPlayer(
+    ref.read(audioCacheServiceProvider),
+  );
+});
+
+final currentIndexProvider = StateProvider<int>((ref) => 0);

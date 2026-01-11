@@ -79,7 +79,7 @@ class WordRepositoryImpl implements WordRepository {
   }
 
   @override
-  Future<List<String>> suggestWords(String prefix) async {
+  Future<List<Word>> suggestWords(String prefix) async {
     final language = await _requireActiveLanguage();
     return wordsDao.suggestWords(language, prefix.trim());
   }

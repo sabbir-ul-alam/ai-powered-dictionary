@@ -29,7 +29,7 @@ abstract class WordRepository {
     bool favoritesOnly = false,
   });
 
-  Future<List<String>> suggestWords(String prefix);
+  Future<List<Word>> suggestWords(String prefix);
 
   Future<int> getWordCount(
       String? query,{

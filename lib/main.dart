@@ -1,4 +1,5 @@
 import 'package:apd/presentation/app_shell.dart';
+import 'package:apd/presentation/screens/home/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -73,7 +74,7 @@ class AppStartScreen extends ConsumerWidget {
         }
 
         // Otherwise, force user to select a language
-        return const LanguageSelectionScreen();
+        return LanguageSelectionScreen();
       },
     );
   }
