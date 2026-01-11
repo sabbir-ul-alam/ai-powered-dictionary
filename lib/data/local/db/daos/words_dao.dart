@@ -71,7 +71,7 @@ class WordsDao extends DatabaseAccessor<AppDatabase> with _$WordsDaoMixin {
   }
 
   /// Prefix suggestions for AddWordScreen
-  Future<List<String>> suggestWords(
+  Future<List<Word>> suggestWords(
       String languageCode,
       String prefix, {
         int limit = 10,
@@ -83,7 +83,7 @@ class WordsDao extends DatabaseAccessor<AppDatabase> with _$WordsDaoMixin {
         w.wordText.like('$prefix%'))
         ..orderBy([(w) => OrderingTerm.asc(w.wordText)])
         ..limit(limit))
-          .map((row) => row.wordText)
+          // .map((row) => row.wordText)
           .get();
 
   /// -------------------------------------------------------------------------

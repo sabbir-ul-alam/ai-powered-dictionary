@@ -13,7 +13,9 @@ class FlashcardsDashboardScreen extends ConsumerWidget {
     final favStatsAsync = ref.watch(learningStatsFavoritesProvider);
 
     return Scaffold(
+      backgroundColor: Color(0xFFF7F7F7),
       appBar: AppBar(
+        backgroundColor: Color(0xFFF7F7F7),
         title: const Text('Flashcards'),
       ),
       body: Padding(
@@ -112,6 +114,7 @@ class _TopScoreCard extends StatelessWidget {
     final text = 'Learned $learned / $total words';
 
     return Card(
+      color: Color(0xFFF7F7F7),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -136,6 +139,8 @@ class _TopScoreCardSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Card(
+      color: Color(0xFFF7F7F7),
+      elevation: 4,
       child: Padding(
         padding: EdgeInsets.all(16),
         child: SizedBox(height: 24),
@@ -176,6 +181,8 @@ class _CategoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: Color(0xFFF7F7F7),
+      elevation: 4,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -191,14 +198,32 @@ class _CategoryCard extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: onStartAll,
-                    child: const Text('Start All'),
+                    style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF3B2EFF),
+                      elevation: 3
+                    ),
+                    child: const Text('Start All',
+                      style: TextStyle(
+                        color: Colors.white,
+                      ),
+                    ),
+
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: OutlinedButton(
+                  child: ElevatedButton(
                     onPressed: onStartUnlearned,
-                    child: const Text('Start Unlearned'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF3B2EFF),
+                        elevation: 3
+
+                    ),
+                    child: const Text('Start Unlearned',
+                      style: TextStyle(
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ),
               ],

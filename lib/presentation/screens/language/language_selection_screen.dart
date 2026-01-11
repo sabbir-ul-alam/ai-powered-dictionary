@@ -2,10 +2,13 @@ import 'package:apd/data/local/db/app_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app_shell.dart';
 import '../../state/providers.dart';
+import '../home/home_screen.dart';
 
 class LanguageSelectionScreen extends ConsumerStatefulWidget {
-  const LanguageSelectionScreen({super.key});
+  final Language? activeLanguage;
+  const LanguageSelectionScreen({super.key, this.activeLanguage});
 
   @override
   ConsumerState<LanguageSelectionScreen> createState() =>
@@ -16,6 +19,20 @@ class _LanguageSelectionScreenState
     extends ConsumerState<LanguageSelectionScreen> {
    Language? _selectedLanguage;
 
+   bool isFirstTime = false;
+
+   @override
+   void initState() {
+     super.initState();
+     _selectedLanguage = widget.activeLanguage;
+     print('############$_selectedLanguage');
+     if (widget.activeLanguage == null){
+       isFirstTime = true;
+     }
+
+     print('after if $isFirstTime');
+   }
+
 
 
    @override
@@ -25,6 +42,19 @@ class _LanguageSelectionScreenState
 
      return Scaffold(
        backgroundColor: const Color(0xFFF7F7F7),
+
+       appBar: AppBar(
+         backgroundColor: Colors.transparent,
+         elevation: 0,
+         leading: isFirstTime
+             ? null : IconButton(
+           onPressed: () => Navigator.pop(context),
+           icon: const Icon(
+             Icons.arrow_back_ios,
+             color: Colors.black,
+           ),
+         ),
+       ),
        body: SafeArea(
          child: FutureBuilder(
            future: languagesAsync,
@@ -42,37 +72,32 @@ class _LanguageSelectionScreenState
                  children: [
                    const SizedBox(height: 48),
 
-                   /// Illustration
-                   Container(
-                     height: 180,
-                     width: double.infinity,
-                     decoration: BoxDecoration(
-                       borderRadius: BorderRadius.circular(16),
-                       gradient: const LinearGradient(
-                         begin: Alignment.topCenter,
-                         end: Alignment.bottomCenter,
-                         colors: [
-                           Color(0xFFD7E3EA),
-                           Color(0xFFC8D8E1),
-                         ],
-                       ),
-                     ),
-                     child: Center(
-                       child: Image.asset(
-                         // colorBlendMode: BlendMode.colorBurn,
-                         'images/language_bubbles.png',
-                         // height: 110,
-                         fit: BoxFit.fitWidth,
+                   ClipRRect(
+                     borderRadius: BorderRadius.circular(50),
+                     child: Container(
+                       height: 180,
+                       width: double.infinity,
 
+                       margin: EdgeInsets.only(left: 20, right: 20, bottom: 10),
+                       decoration: BoxDecoration(
+                         borderRadius: BorderRadiusGeometry.circular(20),
+
+                       ),
+                       child: Center(
+                         child: Image.asset(
+                           'images/language_bubbles.png',
+                           fit: BoxFit.cover,
+                         ),
                        ),
                      ),
                    ),
+
 
                    const SizedBox(height: 32),
 
                    /// Title
                    const Text(
-                     'Choose your first\nlanguage',
+                     'Choose your language',
                      textAlign: TextAlign.center,
                      style: TextStyle(
                        fontSize: 28,
@@ -86,7 +111,7 @@ class _LanguageSelectionScreenState
 
                    /// Subtitle
                    const Text(
-                     'You can add more languages later.',
+                     'You can change language later.',
                      textAlign: TextAlign.center,
                      style: TextStyle(
                        fontSize: 16,
@@ -193,13 +218,16 @@ class _LanguageSelectionScreenState
     ref.read(activeLanguageTriggerProvider.notifier).state++;
 
     // Navigate to Home
-    // if (context.mounted) {
-    //   Navigator.of(context).pushReplacement(
-    //     MaterialPageRoute(
-    //       builder: (_) => const HomeScreen(),
-    //     ),
-    //   );
-    // }
+    if (context.mounted && isFirstTime) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const AppShell(),
+        ),
+      );
+    }
+    else {
+      Navigator.of(context).pop();
+    }
   }
    void _openLanguageBottomSheet(
        BuildContext context,
@@ -259,32 +287,32 @@ class _LanguageSelectionScreenState
                const SizedBox(height: 16),
 
                /// Search (visual only)
-               Padding(
-                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                 child: Container(
-                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                   height: 48,
-                   decoration: BoxDecoration(
-                     color: const Color(0xFFF3F4F6),
-                     borderRadius: BorderRadius.circular(14),
-                   ),
-                   child: const Row(
-                     children: [
-                       Icon(Icons.search, color: Colors.grey),
-                       SizedBox(width: 12),
-                       Text(
-                         'Search language',
-                         style: TextStyle(
-                           color: Colors.grey,
-                           fontSize: 16,
-                         ),
-                       ),
-                     ],
-                   ),
-                 ),
-               ),
+               // Padding(
+               //   padding: const EdgeInsets.symmetric(horizontal: 20),
+               //   child: Container(
+               //     padding: const EdgeInsets.symmetric(horizontal: 16),
+               //     height: 48,
+               //     decoration: BoxDecoration(
+               //       color: const Color(0xFFF3F4F6),
+               //       borderRadius: BorderRadius.circular(14),
+               //     ),
+               //     child: const Row(
+               //       children: [
+               //         Icon(Icons.search, color: Colors.grey),
+               //         SizedBox(width: 12),
+               //         Text(
+               //           'Search language',
+               //           style: TextStyle(
+               //             color: Colors.grey,
+               //             fontSize: 16,
+               //           ),
+               //         ),
+               //       ],
+               //     ),
+               //   ),
+               // ),
 
-               const SizedBox(height: 12),
+               // const SizedBox(height: 12),
 
                /// Language list
                Expanded(
@@ -299,18 +327,16 @@ class _LanguageSelectionScreenState
                      return ListTile(
                        onTap: () {
                          setState(() {
-                           // _selectedLanguage?.code = language.code;
                            _selectedLanguage = language;
                          });
                          Navigator.pop(context);
                        },
-                       // leading: CircleAvatar(
-                       //   backgroundColor: Colors.transparent,
-                       //   child: Text(
-                       //     language.flag ?? '',
-                       //     style: const TextStyle(fontSize: 24),
-                       //   ),
-                       // ),
+                       leading: Icon(
+                         _selectedLanguage?.code == language.code
+                             ? Icons.check_circle
+                             : Icons.circle_outlined,
+                       ),
+
                        title: Text(
                          language.displayName,
                          style: const TextStyle(
@@ -318,13 +344,6 @@ class _LanguageSelectionScreenState
                            fontWeight: FontWeight.w600,
                          ),
                        ),
-                       // subtitle: Text(
-                       //   language.nativeName ?? '',
-                       //   style: const TextStyle(
-                       //     fontSize: 14,
-                       //     color: Color(0xFF6B7280),
-                       //   ),
-                       // ),
                      );
                    },
                  ),

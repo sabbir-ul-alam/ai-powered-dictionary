@@ -13,7 +13,7 @@ class AppBottomBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
 
-  const AppBottomBar({
+  const AppBottomBar({super.key,
     required this.currentIndex,
     required this.onTap,
   });
@@ -47,12 +47,12 @@ class AppBottomBar extends StatelessWidget {
             isActive: currentIndex == 1,
             onTap: () => onTap(1),
           ),
-          _NavItem(
-            icon: Icons.person_outline,
-            label: 'Profile',
-            isActive: currentIndex == 2,
-            onTap: () => onTap(2),
-          ),
+          // _NavItem(
+          //   icon: Icons.person_outline,
+          //   label: 'Profile',
+          //   isActive: currentIndex == 2,
+          //   onTap: () => onTap(2),
+          // ),
         ],
       ),
     );

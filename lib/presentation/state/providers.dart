@@ -144,7 +144,7 @@ final starredWordCountProvider = FutureProvider<int>((ref) async {
 /// ---------------------------------------------------------------------------
 
 final wordSuggestionsProvider =
-FutureProvider.family<List<String>, String>((ref, prefix) async {
+FutureProvider.family<List<Word>, String>((ref, prefix) async {
   ref.watch(activeLanguageTriggerProvider);
 
   final p = prefix.trim();
@@ -282,3 +282,5 @@ Provider<PronunciationPlayer>((ref) {
     ref.read(audioCacheServiceProvider),
   );
 });
+
+final currentIndexProvider = StateProvider<int>((ref) => 0);

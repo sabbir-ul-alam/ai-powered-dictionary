@@ -35,6 +35,7 @@ class _FlashcardSessionScreenState
         _flipped = false;
       });
     } else {
+      ref.read(currentIndexProvider.notifier).state = 1;
       Navigator.of(context).pop();
     }
   }
@@ -44,10 +45,9 @@ class _FlashcardSessionScreenState
     required bool learned,
     required int total,
   }) async {
-    await ref.read(wordsLearningDaoProvider).setLearned(
-      wordId: wordId,
-      learned: learned,
-    );
+    await ref
+        .read(wordsLearningDaoProvider)
+        .setLearned(wordId: wordId, learned: learned);
 
     // Refresh dashboard + any lists that depend on counts
     ref.read(activeLanguageTriggerProvider.notifier).state++;
@@ -65,12 +65,14 @@ class _FlashcardSessionScreenState
 
     final idsAsync = ref.watch(flashcardSessionWordIdsProvider(filter));
 
-    final title = widget.favoritesOnly
-        ? (widget.unlearnedOnly ? 'Favourites (Unlearned)' : 'Favourites')
-        : (widget.unlearnedOnly ? 'All (Unlearned)' : 'All Words');
+    final title =
+        widget.favoritesOnly
+            ? (widget.unlearnedOnly ? 'Favourites (Unlearned)' : 'Favourites')
+            : (widget.unlearnedOnly ? 'All (Unlearned)' : 'All Words');
 
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      backgroundColor: Color(0xFFF7F7F7),
+      appBar: AppBar(title: Text(title), backgroundColor: Color(0xFFF7F7F7), centerTitle: true,),
       body: idsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => const Center(child: Text('Failed to start session')),
@@ -90,99 +92,167 @@ class _FlashcardSessionScreenState
             child: Column(
               children: [
                 Text('${_index + 1} / ${ids.length}'),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
+                Expanded(child:
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(child:
+                    GestureDetector(
+                      onTap: _flip,
+                      child: Card(
+                        color: Color(0xFFF7F7F7),
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Center(
+                          // heightFactor: 5,
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child:
+                                _flipped
+                                    ? metadataAsync.when(
+                                      loading:
+                                          () =>
+                                              const CircularProgressIndicator(),
+                                      error:
+                                          (_, __) => const Text(
+                                            'Failed to load meaning',
+                                          ),
+                                      data: (metadataJson) {
+                                        if (metadataJson == null) {
+                                          return const Text(
+                                            'No meaning yet.\nTap Edit on Word Details to generate or add it.',
+                                            textAlign: TextAlign.center,
+                                          );
+                                        }
+                                        final decoded =
+                                            json.decode(metadataJson)
+                                                as Map<String, dynamic>;
+                                        final meaning =
+                                            decoded['meaning'] as String?;
+                                        final examples =
+                                            (decoded['examples']
+                                                    as List<dynamic>?)
+                                                ?.whereType<String>()
+                                                .toList() ??
+                                            const [];
 
-                Expanded(
-                  child: GestureDetector(
-                    onTap: _flip,
-                    child: Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: _flipped
-                              ? metadataAsync.when(
-                            loading: () => const CircularProgressIndicator(),
-                            error: (_, __) => const Text('Failed to load meaning'),
-                            data: (metadataJson) {
-                              if (metadataJson == null) {
-                                return const Text(
-                                  'No meaning yet.\nTap Edit on Word Details to generate or add it.',
-                                  textAlign: TextAlign.center,
-                                );
-                              }
-                              final decoded = json.decode(metadataJson) as Map<String, dynamic>;
-                              final meaning = decoded['meaning'] as String?;
-                              final examples =
-                                  (decoded['examples'] as List<dynamic>?)?.whereType<String>().toList() ?? const [];
-
-                              return Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  if (meaning != null && meaning.trim().isNotEmpty) ...[
-                                    Text(
-                                      meaning,
+                                        return Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
+                                          children: [
+                                            if (meaning != null &&
+                                                meaning.trim().isNotEmpty) ...[
+                                              Text(
+                                                meaning,
+                                                textAlign: TextAlign.center,
+                                                style:
+                                                    Theme.of(
+                                                      context,
+                                                    ).textTheme.titleMedium,
+                                              ),
+                                              const SizedBox(height: 16),
+                                            ],
+                                            if (examples.isEmpty)
+                                              const Text(
+                                                'No examples yet',
+                                                textAlign: TextAlign.center,
+                                              )
+                                            else
+                                              ...examples.map(
+                                                (e) => Padding(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        vertical: 4,
+                                                      ),
+                                                  child: Text(
+                                                    '• $e',
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        );
+                                      },
+                                    )
+                                    : Text(
+                                      // For the front we need the actual word text.
+                                      // We avoid a heavy join here; simplest approach:
+                                      // load from wordListProvider cache if present, else show id short.
+                                      _frontWordText(ref, wordId),
                                       textAlign: TextAlign.center,
-                                      style: Theme.of(context).textTheme.titleMedium,
+                                      style:
+                                          Theme.of(
+                                            context,
+                                          ).textTheme.headlineMedium,
                                     ),
-                                    const SizedBox(height: 16),
-                                  ],
-                                  if (examples.isEmpty)
-                                    const Text('No examples yet', textAlign: TextAlign.center)
-                                  else
-                                    ...examples.map(
-                                          (e) => Padding(
-                                        padding: const EdgeInsets.symmetric(vertical: 4),
-                                        child: Text('• $e', textAlign: TextAlign.center),
-                                      ),
-                                    ),
-                                ],
-                              );
-                            },
-                          )
-                              : Text(
-                            // For the front we need the actual word text.
-                            // We avoid a heavy join here; simplest approach:
-                            // load from wordListProvider cache if present, else show id short.
-                            _frontWordText(ref, wordId),
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.headlineMedium,
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => _mark(wordId: wordId, learned: true, total: ids.length),
-                        child: const Text('I know this'),
-                      ),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => _mark(wordId: wordId, learned: false, total: ids.length),
-                        child: const Text('Still learning'),
-                      ),
+
+                    const SizedBox(height: 20),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: Color(0xFF3B2EFF),
+                                elevation: 3
+
+                            ),
+                            onPressed:
+                                () => _mark(
+                                  wordId: wordId,
+                                  learned: true,
+                                  total: ids.length,
+                                ),
+                            child: const Text('I know this',
+                              style: TextStyle(
+                                color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: Color(0xFF3B2EFF),
+                                elevation: 3
+
+                            ),
+                            onPressed:
+                                () => _mark(
+                                  wordId: wordId,
+                                  learned: false,
+                                  total: ids.length,
+                                ),
+                            child: const Text('Still learning',
+                              style: TextStyle(
+                                color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        ),
+                      ],
                     ),
+
+                    const SizedBox(height: 100),
+
+                    // TextButton(
+                    //   onPressed: _flip,
+                    //   child: Text(_flipped ? 'Show word' : 'Show meaning'),
+                    // ),
                   ],
                 ),
-
-                const SizedBox(height: 10),
-
-                TextButton(
-                  onPressed: _flip,
-                  child: Text(_flipped ? 'Show word' : 'Show meaning'),
                 ),
               ],
             ),
@@ -200,7 +270,7 @@ class _FlashcardSessionScreenState
     return listAsync.maybeWhen(
       data: (words) {
         final w = words.firstWhere(
-              (x) => x.id == wordId,
+          (x) => x.id == wordId,
           orElse: () => words.isNotEmpty ? words.first : null as dynamic,
         );
         // If user started "All (Unlearned)" we might be filtering; still okay.

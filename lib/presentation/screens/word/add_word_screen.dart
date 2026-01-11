@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:apd/presentation/screens/word/word_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -27,12 +28,14 @@ class _AddWordScreenState extends ConsumerState<AddWordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final suggestionsAsync =
-    ref.watch(wordSuggestionsProvider(_currentInput));
+    final suggestionsAsync = ref.watch(wordSuggestionsProvider(_currentInput));
 
     return Scaffold(
+      backgroundColor: Color(0xFFF7F7F7),
       appBar: AppBar(
+        backgroundColor: Color(0xFFF7F7F7),
         title: const Text('Add Word'),
+        centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -71,56 +74,54 @@ class _AddWordScreenState extends ConsumerState<AddWordScreen> {
             /// ---------------------------------------------------------------
             /// SUGGESTIONS
             /// ---------------------------------------------------------------
-            if (_currentInput.isNotEmpty)
-              Expanded(
-                child: suggestionsAsync.when(
-                  data: (suggestions) {
-                    if (suggestions.isEmpty) {
-                      return const SizedBox.shrink();
-                    }
+            // if (_currentInput.isNotEmpty)
+            Expanded(
+              child: suggestionsAsync.when(
+                data: (suggestions) {
+                  if (suggestions.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
 
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Existing words',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                          ),
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Existing words',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                          // fontWeight: FontWeight.w100,
                         ),
-                        const SizedBox(height: 8),
-                        Expanded(
-                          child: ListView.separated(
-                            itemCount: suggestions.length,
-                            separatorBuilder: (_, __) =>
-                            const SizedBox(height: 6),
-                            itemBuilder: (context, index) {
-                              return _SuggestionTile(
-                                text: suggestions[index],
-                                onTap: () {
-                                  _controller.text =
-                                  suggestions[index];
-                                  _controller.selection =
-                                      TextSelection.fromPosition(
-                                        TextPosition(
-                                          offset:
-                                          _controller.text.length,
-                                        ),
-                                      );
-                                },
-                              );
-                            },
-                          ),
+                      ),
+                      const SizedBox(height: 8),
+                      Expanded(
+                        child: ListView.separated(
+                          itemCount: suggestions.length,
+                          separatorBuilder:
+                              (_, __) => const SizedBox(height: 6),
+                          itemBuilder: (context, index) {
+                            return _SuggestionTile(
+                              text: suggestions[index].wordText,
+                              onTap: () async {
+                                _controller.text = suggestions[index].wordText;
+                                await Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => WordDetailScreen(word: suggestions[index]),
+                                  ),
+                                );
+                              },
+                            );
+                          },
                         ),
-                      ],
-                    );
-                  },
-                  loading: () => const Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                  error: (_, __) => const SizedBox.shrink(),
-                ),
+                      ),
+                    ],
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (_, __) => const SizedBox.shrink(),
               ),
+            ),
 
             /// ---------------------------------------------------------------
             /// SAVE BUTTON
@@ -129,19 +130,26 @@ class _AddWordScreenState extends ConsumerState<AddWordScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _isSaving
-                      ? null
-                      : () => _saveWord(context),
-                  child: _isSaving
-                      ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF3B2EFF),
+                    disabledBackgroundColor: Color(0xFFD1D1D5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 0,
+                    alignment: Alignment.center,
+                  ),
+
+                  onPressed:
+                      _currentInput.isEmpty ? null : () => _saveWord(context),
+                  child: const Text(
+                    'Save',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                       color: Colors.white,
                     ),
-                  )
-                      : const Text('Save'),
+                  ),
                 ),
               ),
             ),
@@ -159,22 +167,23 @@ class _AddWordScreenState extends ConsumerState<AddWordScreen> {
     });
 
     try {
-      final word = await ref.read(wordRepositoryProvider).addWord(
-        text: _controller.text.trim(),
-      );
+      final word = await ref
+          .read(wordRepositoryProvider)
+          .addWord(text: _controller.text.trim());
 
       print('After add word call$word');
 
-
       final language =
-      await ref.read(languageRepositoryProvider).getActiveLanguage();
+          await ref.read(languageRepositoryProvider).getActiveLanguage();
 
-// Fire-and-forget, but NOT tied to widget lifecycle
+      // Fire-and-forget, but NOT tied to widget lifecycle
       unawaited(
-        ref.read(wordEnrichmentServiceProvider).autoGenerateMetadata(
-          word:word,
-          languageName: language!.displayName,
-        ),
+        ref
+            .read(wordEnrichmentServiceProvider)
+            .autoGenerateMetadata(
+              word: word,
+              languageName: language!.displayName,
+            ),
       );
       // _controller.clear();
       // setState(() {
@@ -191,11 +200,9 @@ class _AddWordScreenState extends ConsumerState<AddWordScreen> {
       print(e);
       // Basic error handling for Phase 1
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to add word'),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Failed to add word')));
       }
     } finally {
       if (mounted) {
@@ -217,25 +224,36 @@ class _SuggestionTile extends StatelessWidget {
   final String text;
   final VoidCallback onTap;
 
-  const _SuggestionTile({
-    required this.text,
-    required this.onTap,
-  });
+  const _SuggestionTile({required this.text, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.grey,
-      borderRadius: BorderRadius.circular(8),
+      color: Color(0xFFF7F7F7),
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            vertical: 12,
-            horizontal: 12,
-          ),
-          child: Text(text),
+        child: Row(
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 12,
+                ),
+                child: Text(
+                  text,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    color: Colors.black,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+
+            Icon(Icons.north_east_outlined, color: Colors.grey),
+          ],
         ),
       ),
     );
