@@ -25,9 +25,14 @@ class TtsPronunciationPlayer implements PronunciationPlayer {
       word: text,
       languageCode: languageCode,
     );
+    print("Path: ${file.path}");
+    print("Exists: ${await file.exists()}");
+    // print("Length: ${await file.length()}");
+
 
     // If cached audio exists → play immediately
     if (await file.exists()) {
+      print('file exists');
       await _player.setFilePath(file.path);
       await _player.play();
       return;
@@ -37,13 +42,16 @@ class TtsPronunciationPlayer implements PronunciationPlayer {
     await _tts.setLanguage(languageCode);
 
     final result =
-    await _tts.synthesizeToFile(text, file.path);
+    await _tts.synthesizeToFile(text, file.path, true);
+
+    print(result);
 
     if (result == 1 && await file.exists()) {
+
       await _player.setFilePath(file.path);
       await _player.play();
     } else {
-      throw Exception('Failed to generate pronunciation audio');
+      throw Exception('Failed to generate pronunciation audio for "$text" in  "$languageCode"');
     }
   }
 

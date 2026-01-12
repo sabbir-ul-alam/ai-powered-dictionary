@@ -13,6 +13,19 @@ class AudioCacheService {
     return File('${dir.path}/${languageCode}_$safeWord.wav');
   }
 
+
+
+  Future<Directory> _audioDir() async {
+    final baseDir = await getApplicationDocumentsDirectory();
+    final audioDir = Directory('${baseDir.path}/audio_cache');
+    if (!audioDir.existsSync()) {
+      audioDir.createSync(recursive: true);
+    }
+    return audioDir;
+  }
+
+
+
   Future<bool> exists({
     required String word,
     required String languageCode,
@@ -22,14 +35,5 @@ class AudioCacheService {
       languageCode: languageCode,
     );
     return file.exists();
-  }
-
-  Future<Directory> _audioDir() async {
-    final baseDir = await getApplicationDocumentsDirectory();
-    final audioDir = Directory('${baseDir.path}/audio_cache');
-    if (!audioDir.existsSync()) {
-      audioDir.createSync(recursive: true);
-    }
-    return audioDir;
   }
 }

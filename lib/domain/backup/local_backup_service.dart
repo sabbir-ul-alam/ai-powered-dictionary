@@ -95,6 +95,8 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import '../../data/local/db/app_database.dart';
+
 /// Local backup + restore.
 /// Android:
 /// - Export/List/Restore via MediaStore to public Documents/APD/Backups
@@ -121,15 +123,43 @@ class LocalBackupService {
     // await _exportBackupIosInternal();
   }
 
+  // Future<List<BackupEntry>> listBackups() async {
+  //   if (Platform.isAndroid) {
+  //     final raw = await _channel.invokeMethod<List<dynamic>>('listBackups');
+  //     final list = raw ?? const [];
+  //     return list
+  //         .whereType<Map>()
+  //         .map((m) => BackupEntry.fromMap(Map<String, dynamic>.from(m)))
+  //         .toList()
+  //       ..sort((a, b) => b.modifiedAtMs.compareTo(a.modifiedAtMs));
+  //   }
+  //
+  //   return _listBackupsIosInternal();
+  // }
+
   Future<List<BackupEntry>> listBackups() async {
     if (Platform.isAndroid) {
-      final raw = await _channel.invokeMethod<List<dynamic>>('listBackups');
-      final list = raw ?? const [];
-      return list
-          .whereType<Map>()
-          .map((m) => BackupEntry.fromMap(Map<String, dynamic>.from(m)))
-          .toList()
+      final dir = Directory('/storage/emulated/0/Documents/APD/Backups');
+      if (!await dir.exists()) {
+        return [];
+      }
+      final files = dir
+          .listSync()
+          .whereType<File>()
+          .where((f) => f.path.endsWith('.db'))
+          .toList();
+
+      return files.map((f) {
+        final stat = f.statSync();
+        return BackupEntry(
+          name: f.uri.pathSegments.last,
+          uri: f.path,
+          modifiedAtMs: stat.modified.millisecondsSinceEpoch,
+          sizeBytes: stat.size,
+        );
+      }).toList()
         ..sort((a, b) => b.modifiedAtMs.compareTo(a.modifiedAtMs));
+
     }
 
     return _listBackupsIosInternal();
@@ -137,16 +167,33 @@ class LocalBackupService {
 
   /// Restores selected backup into the live DB location.
   /// IMPORTANT: After restore, you must fully restart the app (exit & relaunch).
+  // Future<void> restoreBackup(BackupEntry entry) async {
+  //   if (Platform.isAndroid) {
+  //     await _channel.invokeMethod('restoreBackup', {
+  //       'uri': entry.uri,
+  //     });
+  //     return;
+  //   }
+  //
+  //   await _restoreBackupIosInternal(entry);
+  // }
+
   Future<void> restoreBackup(BackupEntry entry) async {
     if (Platform.isAndroid) {
-      await _channel.invokeMethod('restoreBackup', {
-        'uri': entry.uri,
-      });
+      final src = File(entry.uri);
+      if (!await src.exists()) {
+        throw StateError('Backup file not found');
+      }
+
+      final dbFile = await AppDatabase.getDatabaseFile();
+      await src.copy(dbFile.path);
       return;
     }
 
     await _restoreBackupIosInternal(entry);
   }
+
+
 
   /// --- iOS INTERNAL IMPLEMENTATION ----------------------------------------
 
